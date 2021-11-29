@@ -17,4 +17,7 @@ if __name__ == "__main__":
 
     myExperiment = Experiment(args.dirpath)
     myExperiment.dropFirstObservations()
-    print(myExperiment.plotColumns(20))
+    #myExperiment.plotColumns(7)
+    myExperiment.plotHistogram2D(8,9)
+    print(myExperiment.get_entropy(8,9))
+    print(myExperiment.get_entropy(9,10))

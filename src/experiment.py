@@ -8,6 +8,10 @@ from functools import lru_cache
 from  scipy import stats
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib.ticker as mtick
+import numpy as np
+from scipy.stats import entropy
+
 
 class Experiment:
     """
@@ -61,11 +65,45 @@ class Experiment:
             self.dataframe.plot(x=xcol, y=ycol, title=mytitle, xlabel=myxlabel, ylabel=myylabel, xlim=(0,100000), legend=False )
         else:
             self.dataframe.plot(x=xcol, y=ycol, title=mytitle, xlabel=myxlabel, ylabel=myylabel, legend=False)
-        #plt.plot(self.dataframe.iloc[:, ycol], [avg_value] * len(self.dataframe) )
+
         if plotname:
             plotFile = os.path.join('plots', f"{plotname}.png")
             plt.savefig(plotFile)
         else:
             plt.show()
 
-   
+
+    def plotHistogram2D(self, xcol: int, ycol: int, plotname: str = None):
+        """
+        Plots one column vs another 2D histogram
+        """
+        myxlabel = f"{self.columns[xcol].description}[{self.columns[xcol].unit}]"
+        myylabel = f"{self.columns[ycol].description}[{self.columns[ycol].unit}]"
+        mytitle = f"Histogram 2D"
+        y = self.dataframe.iloc[:, ycol]
+        x = self.dataframe.iloc[:, xcol]
+
+
+        fig, ax = plt.subplots()
+        plt.hist2d(x, y, bins=10, cmap=plt.cm.Reds)
+        plt.colorbar(format = mtick.FormatStrFormatter('%.1e'))
+        plt.xlabel(myxlabel)
+        plt.ylabel(myylabel)
+        if plotname:
+            plotFile = os.path.join('plots', f"{plotname}.png")
+            plt.savefig(plotFile)
+        else:
+            plt.show()
+
+    def get_entropy(self, xcol: int, ycol: int):
+        """
+        computes entropy from histogram of xcol vs. ycol
+        """
+        y = self.dataframe.iloc[:, ycol]
+        x = self.dataframe.iloc[:, xcol]
+
+        h = np.histogram2d(x, y, bins=10)
+        h_vec = np.concatenate(h[0])
+        h_norm = h_vec/sum(h_vec)
+        # use molar gas constant R = 8.314
+        return 8.314*entropy(h_norm )
