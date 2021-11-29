@@ -35,13 +35,13 @@ if __name__ == "__main__":
     myExperiment = Experiment(args.dirpath)
     myExperiment.dropFirstObservations()
     myExperiment.plotColumns(8)
+    myExperiment.plotColumns(9)
+    myExperiment.plotColumns(99)  # maximal value 99
     myExperiment.plotHistogram2D(8, 9)
 
     mySetOfExperiments = SetOfExperiments(args.partial_dirpath)
     mySetOfExperiments.hist_of_entropy("_sidechain_Ca.tab", 8, 9, "hist")
-    mySetOfExperiments.entropy_distribution_percentiles(
-        "sidechain", ["Ca", "Mg", "Na"], 8, 9
-    )
-    mySetOfExperiments.entropy_distribution_percentiles(
-        "analysis", ["Ca", "Mg", "Na"], 8, 9
-    )
+
+    mySetOfExperiments.entropy_distribution_percentiles("analysis", "Ca", 8, 9)
+
+    mySetOfExperiments.entropy_distribution_percentiles("analysis", "Ca", 10, 11)
