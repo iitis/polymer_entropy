@@ -271,3 +271,47 @@ class SetOfExperiments:
         plt.clf()
 
         return median_entropy
+
+    def entropy_distribution_realisations(
+        self,
+        chain_type: str,
+        ion,
+        xcol: int,
+        ycol: int,
+        plotdir: str,
+        no_mers: int = 24,
+    ):
+
+        """  compute percentiles of the histogram of entropies """
+
+        first_mers = [mer for mer in range(no_mers - 1)]
+
+        entropies = [[0. for i in range(12)] for _ in range(no_mers - 1)]
+        i = 0
+
+        for mer in range(no_mers - 1):
+
+            rest_of_path = "_" + chain_type + "_" + ion + ".tab"
+            entropies[i] = np.array(
+                self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer)
+            )
+            i += 1
+
+        mytitle = f"file type {chain_type}, ion {ion}"
+        myylabel = f"entropy_{self.x_axis[0:4]}{self.y_axis[0:4]}"
+        myxlabel = "first mer"
+
+        for j in range(12):
+
+            e = [entropies[i][j] for i in range(no_mers - 1)]
+
+            plt.plot(first_mers, e, label=f"struc. {j+1}")
+
+        plt.legend()
+        plt.title(mytitle)
+        plt.xlabel(myxlabel)
+        plt.ylabel(myylabel)
+        plt.savefig(
+            plotdir + f"entropy_realisations{ion}_{self.x_axis[0:4]}_{self.y_axis[0:4]}.pdf"
+        )
+        plt.clf()

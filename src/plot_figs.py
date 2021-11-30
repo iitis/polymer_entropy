@@ -67,9 +67,17 @@ if __name__ == "__main__":
             type, ion, x_start, y_start, args.plotdir
         )
 
+        mySetOfExperiments.entropy_distribution_realisations(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
         x_start = 10
         y_start = 11
 
         mySetOfExperiments.entropy_distribution_percentiles(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        mySetOfExperiments.entropy_distribution_realisations(
             type, ion, x_start, y_start, args.plotdir
         )
