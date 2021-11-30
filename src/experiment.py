@@ -50,23 +50,23 @@ class Experiment:
     }
 
     def __init__(self, filepath: str):
-        self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
+        self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2,
+                                     engine="python")
         if "sidechain" in filepath:
             self.sidechain = True
         else:
             self.sidechain = False
 
-    def correct_signs(self, x):
+    def correct_signs(self, x, thres: float = 0.33):
         """ if the sign of the angle jumps it is reversed"""
-        η = 0.33
         x_cor = [el for el in x]
 
         for i in range(len(x_cor) - 1):
-            if np.abs(x_cor[i] + x_cor[i + 1]) < η * np.abs(x_cor[i + 1]):
+            if np.abs(x_cor[i] + x_cor[i + 1]) < thres * np.abs(x_cor[i + 1]):
 
-                x_cor[i + 1 : -1] = [-el for el in x_cor[i + 1 : -1]]
+                x_cor[i + 1: -1] = [-el for el in x_cor[i + 1: -1]]
 
-        if np.abs(x_cor[-1] + x_cor[-2]) < η * np.abs(x_cor[-1]):
+        if np.abs(x_cor[-1] + x_cor[-2]) < thres * np.abs(x_cor[-1]):
             x_cor[-1] = -x_cor[-1]
 
         return x_cor
@@ -85,7 +85,9 @@ class Experiment:
                 return desc, unit
         else:  # the rest will be changed
             if col < 8:
-                return self.columns_side[col].description, self.columns_side[col].unit
+                desc = self.columns_side[col].description
+                un = self.columns_side[col].unit
+                return desc, un
             else:
                 offset = col % 4 + 8
                 mer = col // 4 - 1
@@ -99,7 +101,8 @@ class Experiment:
         Drops first observations so that only points after stabilisation are
         further considered
         """
-        self.dataframe.drop(index=self.dataframe.index[0], axis=0, inplace=True)
+        self.dataframe.drop(index=self.dataframe.index[0], axis=0,
+                            inplace=True)
 
     def plotColumns(self, ycol: int, xcol: int = 0, plotname: str = None):
         """
@@ -191,7 +194,7 @@ class SetOfExperiments:
         self.y_axis = f"{yname}"
 
     def hist_of_entropy(
-        self, rest_of_path: str, xcol: int, ycol: int, plotname: str = None
+        self, rest_of_path: str, xcol: int, ycol: int, plotdir: str = None
     ):
         """ compute histogram of entropy over realisations """
 
@@ -204,7 +207,7 @@ class SetOfExperiments:
             self.axis_descrtiption(myExperiment, xcol, ycol)
             entropies[i] = myExperiment.get_entropy(xcol, ycol)
 
-        if plotname:
+        if plotdir:
             mytitle = f"{rest_of_path}"
             myxlabel = f"entropy{self.x_axis}{self.y_axis}"
             myylabel = "frequency"
@@ -214,7 +217,9 @@ class SetOfExperiments:
             plt.title(mytitle[1:-4])
             plt.xlabel(myxlabel)
             plt.ylabel(myylabel)
-            plt.show()
+            f_dir = plotdir + f"hist_{self.x_axis[0:4]}_{self.y_axis[0:4]}.pdf"
+            plt.savefig(f_dir)
+            plt.clf()
         return entropies
 
     def entropy_distribution_percentiles(
@@ -223,7 +228,7 @@ class SetOfExperiments:
         ion,
         xcol: int,
         ycol: int,
-        plotname: str = None,
+        plotdir: str,
         no_mers: int = 24,
     ):
 
@@ -260,6 +265,9 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plt.show()
+        plt.savefig(
+            plotdir + f"entropy_{ion}_{self.x_axis[0:4]}_{self.y_axis[0:4]}.pdf"
+        )
+        plt.clf()
 
         return median_entropy
