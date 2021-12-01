@@ -16,7 +16,7 @@ if __name__ == "__main__":
         description="Reads tabular data for molecular dynamics compute entropy"
     )
     parser.add_argument(
-        "--dirpath",
+        "--filepath",
         type=str,
         help="path to directory for single realisation",
         default="",
@@ -37,19 +37,18 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--plotdir", type=str, help="folder where plots are saved",
-        default="pics/"
+        "--plotdir", type=str, help="folder where plots are saved", default="pics/"
     )
 
     args = parser.parse_args()
 
-    if args.dirpath != "":  # otherwise it performs only entropy analysis
-        myExperiment = Experiment(args.dirpath)
+    if args.filepath != "":  # otherwise it performs only entropy analysis
+        myExperiment = Experiment(args.filepath)
         myExperiment.dropFirstObservations()
-        myExperiment.plotColumns(8)
-        myExperiment.plotColumns(9)
-        myExperiment.plotColumns(99)  # maximal value 99
-        myExperiment.plotHistogram2D(8, 9)
+        myExperiment.plotColumns(8, args.plotdir)
+        myExperiment.plotColumns(9, args.plotdir)
+        myExperiment.plotColumns(99, args.plotdir)  # maximal value 99
+        myExperiment.plotHistogram2D(8, 9, args.plotdir)
 
     mySetOfExperiments = SetOfExperiments(args.datafolder + args.namecommon)
 
@@ -73,6 +72,17 @@ if __name__ == "__main__":
 
         x_start = 10
         y_start = 11
+
+        mySetOfExperiments.entropy_distribution_percentiles(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        mySetOfExperiments.entropy_distribution_realisations(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        x_start = 8
+        y_start = 10
 
         mySetOfExperiments.entropy_distribution_percentiles(
             type, ion, x_start, y_start, args.plotdir

@@ -50,21 +50,20 @@ class Experiment:
     }
 
     def __init__(self, filepath: str):
-        self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2,
-                                     engine="python")
+        self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         if "sidechain" in filepath:
             self.sidechain = True
         else:
             self.sidechain = False
 
-    def correct_signs(self, x, thres: float = 0.33):
+    def correct_signs(self, x, thres: float = 0.5):
         """ if the sign of the angle jumps it is reversed"""
         x_cor = [el for el in x]
 
         for i in range(len(x_cor) - 1):
             if np.abs(x_cor[i] + x_cor[i + 1]) < thres * np.abs(x_cor[i + 1]):
 
-                x_cor[i + 1: -1] = [-el for el in x_cor[i + 1: -1]]
+                x_cor[i + 1 : -1] = [-el for el in x_cor[i + 1 : -1]]
 
         if np.abs(x_cor[-1] + x_cor[-2]) < thres * np.abs(x_cor[-1]):
             x_cor[-1] = -x_cor[-1]
@@ -80,7 +79,7 @@ class Experiment:
                 offset = col % 4 + 8
                 mer = col // 4 - 1
                 desc = self.columns[offset].description
-                desc += "mer " + str(mer) + " - mer " + str(mer + 1)
+                desc += f"mers {mer},{mer + 1}"
                 unit = self.columns[offset].unit
                 return desc, unit
         else:  # the rest will be changed
@@ -92,7 +91,7 @@ class Experiment:
                 offset = col % 4 + 8
                 mer = col // 4 - 1
                 desc = self.columns_side[offset].description
-                desc += "mer " + str(mer) + " - mer " + str(mer + 1)
+                desc += f"mers {mer},{mer + 1}"
                 unit = self.columns_side[offset].unit
                 return desc, unit
 
@@ -101,23 +100,23 @@ class Experiment:
         Drops first observations so that only points after stabilisation are
         further considered
         """
-        self.dataframe.drop(index=self.dataframe.index[0], axis=0,
-                            inplace=True)
+        self.dataframe.drop(index=self.dataframe.index[0], axis=0, inplace=True)
 
-    def plotColumns(self, ycol: int, xcol: int = 0, plotname: str = None):
+    def plotColumns(self, ycol: int, plotname: str = None):
+
+        xcol = 0
         """
         Plots one column vs another (time by default).
-        Stores to png file if plot name is provided.
+        Stores to pdf file if plot name is provided.
         """
         xname, xunit = self.getColumnName(xcol)
         yname, yunit = self.getColumnName(ycol)
-        myxlab = f"{xname}[{xunit}]"
-        myylab = f"{yname}[{yunit}]"
+        myxlab = f"{xname}  [{xunit}]"
+        myylab = f"{yname}  [{yunit}]"
         mytitle = f"{xname} vs {yname}"
 
         y = self.dataframe.iloc[:, ycol]
         x = self.dataframe.iloc[:, xcol]
-
         y = self.correct_signs(y)
 
         plt.plot(x, y)
@@ -126,8 +125,9 @@ class Experiment:
         plt.title(mytitle)
 
         if plotname:
-            plotFile = os.path.join("plots", f"{plotname}.png")
+            plotFile = f"{plotname}series_{ycol}.pdf"
             plt.savefig(plotFile)
+            plt.clf()
         else:
             plt.show()
 
@@ -137,8 +137,8 @@ class Experiment:
         """
         xname, xunit = self.getColumnName(xcol)
         yname, yunit = self.getColumnName(ycol)
-        myxlab = f"{xname}[{xunit}]"
-        myylab = f"{yname}[{yunit}]"
+        myxlab = f"{xname}   [{xunit}]"
+        myylab = f"{yname}   [{yunit}]"
         mytitle = f"Histogram 2D"
         y = self.dataframe.iloc[:, ycol]
         y = self.correct_signs(y)
@@ -153,8 +153,9 @@ class Experiment:
         plt.ylabel(myylab)
         plt.title(mytitle)
         if plotname:
-            plotFile = os.path.join("plots", f"{plotname}.png")
+            plotFile = f"{plotname}hist2D_{xcol}_{ycol}.pdf"
             plt.savefig(plotFile)
+            plt.clf()
         else:
             plt.show()
 
@@ -208,8 +209,12 @@ class SetOfExperiments:
             entropies[i] = myExperiment.get_entropy(xcol, ycol)
 
         if plotdir:
+            xdesc = self.x_axis
+            ydesc = self.y_axis
+
+            plotFile = f"{plotdir}hist{xdesc[0:4]}_{ydesc[0:4]}.pdf"
             mytitle = f"{rest_of_path}"
-            myxlabel = f"entropy{self.x_axis}{self.y_axis}"
+            myxlabel = f"entropy {xdesc} vs. {ydesc}"
             myylabel = "frequency"
 
             fig, ax = plt.subplots()
@@ -217,8 +222,8 @@ class SetOfExperiments:
             plt.title(mytitle[1:-4])
             plt.xlabel(myxlabel)
             plt.ylabel(myylabel)
-            f_dir = plotdir + f"hist_{self.x_axis[0:4]}_{self.y_axis[0:4]}.pdf"
-            plt.savefig(f_dir)
+
+            plt.savefig(plotFile)
             plt.clf()
         return entropies
 
@@ -229,32 +234,33 @@ class SetOfExperiments:
         xcol: int,
         ycol: int,
         plotdir: str,
-        no_mers: int = 24,
+        no_mers: int = 23,
     ):
 
         """  compute percentiles of the histogram of entropies """
 
-        first_mers = [mer for mer in range(no_mers - 1)]
+        first_mers = [mer + 1 for mer in range(no_mers)]
 
-        median_entropy = [0.0 for _ in range(no_mers - 1)]
-        entropy_perc5 = [0.0 for _ in range(no_mers - 1)]
-        entropy_perc95 = [0.0 for _ in range(no_mers - 1)]
-        i = 0
+        median_entropy = [0.0 for _ in range(no_mers)]
+        entropy_perc5 = [0.0 for _ in range(no_mers)]
+        entropy_perc95 = [0.0 for _ in range(no_mers)]
 
-        for mer in range(no_mers - 1):
+        for mer in range(no_mers):
 
             rest_of_path = "_" + chain_type + "_" + ion + ".tab"
             entropies = np.array(
                 self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer)
             )
-            median_entropy[i] = np.median(entropies)
-            entropy_perc5[i] = np.percentile(entropies, 5)
-            entropy_perc95[i] = np.percentile(entropies, 95)
-            i += 1
+            median_entropy[mer] = np.median(entropies)
+            entropy_perc5[mer] = np.percentile(entropies, 5)
+            entropy_perc95[mer] = np.percentile(entropies, 95)
 
-        mytitle = f"file type {chain_type}, ion {ion}"
-        myylabel = f"entropy{self.x_axis[0:4]}{self.y_axis[0:4]}"
-        myxlabel = "first mer"
+        xdesc = self.x_axis[0:4]
+        ydesc = self.y_axis[0:4]
+
+        mytitle = f"{chain_type}, ion {ion}"
+        myylabel = f"entropy  {xdesc} vs. {ydesc}"
+        myxlabel = "number of first mer"
 
         plt.plot(first_mers, median_entropy, "o--", color="red", label="median")
         plt.plot(
@@ -265,9 +271,8 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plt.savefig(
-            plotdir + f"entropy_{ion}_{self.x_axis[0:4]}_{self.y_axis[0:4]}.pdf"
-        )
+        plotFile = f"{plotdir}entropy_{ion}_{xdesc}_{ydesc}.pdf"
+        plt.savefig(plotFile)
         plt.clf()
 
         return median_entropy
@@ -279,39 +284,47 @@ class SetOfExperiments:
         xcol: int,
         ycol: int,
         plotdir: str,
-        no_mers: int = 24,
+        no_mers: int = 23,
     ):
 
         """  compute percentiles of the histogram of entropies """
 
-        first_mers = [mer for mer in range(no_mers - 1)]
+        no_struct = 12
 
-        entropies = [[0. for i in range(12)] for _ in range(no_mers - 1)]
-        i = 0
+        first_mers = [mer + 1 for mer in range(no_mers)]
 
-        for mer in range(no_mers - 1):
+        print("highest first mer", first_mers[-1])
+
+        entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
+        # i = 0
+
+        for mer in range(no_mers):
 
             rest_of_path = "_" + chain_type + "_" + ion + ".tab"
-            entropies[i] = np.array(
+            entropies[mer] = np.array(
                 self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer)
             )
-            i += 1
+            # i += 1
 
-        mytitle = f"file type {chain_type}, ion {ion}"
-        myylabel = f"entropy_{self.x_axis[0:4]}{self.y_axis[0:4]}"
-        myxlabel = "first mer"
+        xdesc = self.x_axis[0:4]
+        ydesc = self.y_axis[0:4]
 
-        for j in range(12):
+        mytitle = f"{chain_type}, ion {ion}"
+        myylabel = f"entropy  {xdesc} vs. {ydesc}"
+        myxlabel = "number of first mer"
 
-            e = [entropies[i][j] for i in range(no_mers - 1)]
+        for j in range(no_struct):
 
-            plt.plot(first_mers, e, label=f"struc. {j+1}")
+            color = 5 / 6 * (1 - j / no_struct) * np.array((1, 1, 1))
+
+            e = [entropies[i][j] for i in range(no_mers)]
+
+            plt.plot(first_mers, e, label=f"{j+1}", color=color)
 
         plt.legend()
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plt.savefig(
-            plotdir + f"entropy_realisations{ion}_{self.x_axis[0:4]}_{self.y_axis[0:4]}.pdf"
-        )
+        plotFile = f"{plotdir}entropy_realisations{ion}_{xdesc}_{ydesc}.pdf"
+        plt.savefig(plotFile)
         plt.clf()
