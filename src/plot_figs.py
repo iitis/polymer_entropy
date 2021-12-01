@@ -15,12 +15,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Reads tabular data for molecular dynamics compute entropy"
     )
-    parser.add_argument(
-        "--filepath",
-        type=str,
-        help="path to directory for single realisation",
-        default="",
-    )
 
     parser.add_argument(
         "--datafolder",
@@ -30,31 +24,43 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--namecommon",
-        type=str,
-        help="common first part of files names",
-        default="Albumin+HA_",
-    )
-
-    parser.add_argument(
-        "--plotdir", type=str, help="folder where plots are saved", default="pics/"
+        "--plotdir", type=str, help="folder plots are saved", default="pics/"
     )
 
     args = parser.parse_args()
 
-    if args.filepath != "":  # otherwise it performs only entropy analysis
-        myExperiment = Experiment(args.filepath)
-        myExperiment.dropFirstObservations()
-        myExperiment.plotColumns(8, args.plotdir)
-        myExperiment.plotColumns(9, args.plotdir)
-        myExperiment.plotColumns(99, args.plotdir)  # maximal value 99
-        myExperiment.plotHistogram2D(8, 9, args.plotdir)
+    for i in range(2):
 
-    mySetOfExperiments = SetOfExperiments(args.datafolder + args.namecommon)
+        i += 1
+
+        file_path = args.datafolder + f"Albumin+HA_{i}_analysis_Ca.tab"
+
+        myExperiment = Experiment(file_path)
+        myExperiment.dropFirstObservations()
+        myExperiment.plotColumns(8, args.plotdir + f"{i}Ca_")
+        # myExperiment.plotColumns(99, args.plotdir)  # maximal value 99
+        myExperiment.plotHistogram2D(8, 9, args.plotdir + f"{i}Ca_")
+        myExperiment.plotHistogram2D(12, 13, args.plotdir + f"{i}Ca_")
+    for i in range(2):
+
+        i += 1
+
+        file_path = args.datafolder + f"Albumin+HA_{i}_sidechain_Ca.tab"
+
+        myExperiment = Experiment(file_path)
+        myExperiment.dropFirstObservations()
+        myExperiment.plotColumns(8, args.plotdir + f"{i}Ca_")
+
+        myExperiment.plotHistogram2D(8, 32, args.plotdir + f"{i}Ca_")
+        myExperiment.plotHistogram2D(9, 33, args.plotdir + f"{i}Ca_")
+
+    mySetOfExperiments = SetOfExperiments(args.datafolder + "Albumin+HA_")
 
     x = 8
     y = 9
     mySetOfExperiments.hist_of_entropy("_analysis_Ca.tab", x, y, args.plotdir)
+    y = 32
+    mySetOfExperiments.hist_of_entropy("_sidechain_Ca.tab", x, y, args.plotdir)
 
     for ion in ["Ca", "Mg", "Na"]:
 
@@ -83,6 +89,40 @@ if __name__ == "__main__":
 
         x_start = 8
         y_start = 10
+
+        mySetOfExperiments.entropy_distribution_percentiles(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        mySetOfExperiments.entropy_distribution_realisations(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        type = "sidechain"
+        x_start = 8
+        y_start = 32
+
+        mySetOfExperiments.entropy_distribution_percentiles(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        mySetOfExperiments.entropy_distribution_realisations(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        x_start = 8
+        y_start = 56
+
+        mySetOfExperiments.entropy_distribution_percentiles(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        mySetOfExperiments.entropy_distribution_realisations(
+            type, ion, x_start, y_start, args.plotdir
+        )
+
+        x_start = 32
+        y_start = 56
 
         mySetOfExperiments.entropy_distribution_percentiles(
             type, ion, x_start, y_start, args.plotdir
