@@ -271,7 +271,7 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = f"{plotdir}entropy_{ion}_{xdesc}_{ydesc}.pdf"
+        plotFile = f"{plotdir}entropy_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf"
         plt.savefig(plotFile)
         plt.clf()
 
@@ -325,6 +325,6 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = f"{plotdir}entropy_realisations{ion}_{xdesc}_{ydesc}.pdf"
+        plotFile = f"{plotdir}entropy_realisations_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf"
         plt.savefig(plotFile)
         plt.clf()
