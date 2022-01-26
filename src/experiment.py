@@ -7,6 +7,7 @@ from collections import namedtuple
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
+import os
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 
@@ -305,7 +306,7 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = f"{plotdir}entropy_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf"
+        plotFile = os.path.join(plotdir,f"entropy_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
         plt.savefig(plotFile)
         plt.clf()
 
@@ -370,8 +371,6 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = (
-            f"{plotdir}entropy_reals_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf"
-        )
+        plotFile = os.path.join(plotdir, f"entropy_reals_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
         plt.savefig(plotFile)
         plt.clf()
