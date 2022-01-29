@@ -53,12 +53,8 @@ class Experiment:
     }
 
     def __init__(self, filepath: str):
-        self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2,
-                                     engine="python")
-        if "sidechain" in filepath:
-            self.sidechain = True
-        else:
-            self.sidechain = False
+        self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
+        self.sidechain = "sidechain" in filepath
 
     def correct_signs(self, x, thres: float = 0.5):
         """ if the sign of the angle is artificially reversed,
@@ -90,8 +86,8 @@ class Experiment:
         else:  # this is the mian chain
             if col < 8:
                 desc = self.columns_side[col].description
-                un = self.columns_side[col].unit
-                return desc, un
+                unit = self.columns_side[col].unit
+                return desc, unit
             else:
                 mer = (col - 8) % 24 + 1
                 i = (col - 8) // 24
@@ -106,16 +102,14 @@ class Experiment:
         Drops first observations so that only points after stabilisation are
         further considered
         """
-        self.dataframe.drop(index=self.dataframe.index[0], axis=0,
-                            inplace=True)
+        self.dataframe.drop(index=self.dataframe.index[0], axis=0, inplace=True)
 
     def plotColumns(self, ycol: int, plotname: str = None):
-
-        xcol = 0
         """
         Plots one column vs another (time by default).
         Stores to pdf file if plot name is provided.
         """
+        xcol = 0
         xname, xunit = self.getColumnName(xcol)
         yname, yunit = self.getColumnName(ycol)
         myxlab = f"{xname}  [{xunit}]"
@@ -196,7 +190,6 @@ class Experiment:
 
 
 class SetOfExperiments:
-
     """
     this class represents a set of experiments of entropy calculation
      performed in a series of files for statistics
@@ -206,32 +199,27 @@ class SetOfExperiments:
         self.partial_path = partial_path
         self.no_experiments = no_experiments
 
-    def axis_descrtiption(self, myExperiment, xcol: int, ycol: int):
+    def set_axis_description(self, myExperiment, xcol: int, ycol: int):
         """ this function will let us know which angle data
          we are dealing with """
-        xname, _ = myExperiment.getColumnName(xcol)
-        yname, _ = myExperiment.getColumnName(ycol)
-        self.x_axis = f"{xname}"
-        self.y_axis = f"{yname}"
+        self.x_axis, _ = myExperiment.getColumnName(xcol)
+        self.y_axis, _ = myExperiment.getColumnName(ycol)
 
-    def hist_of_entropy(
-        self, rest_of_path: str, xcol: int, ycol: int, plotdir: str = None
-    ):
+    def hist_of_entropy(self, rest_of_path: str, xcol: int, ycol: int, plotdir: str = None):
         """ compute histogram of entropy over realisations """
 
-        entropies = [0.0 for _ in range(self.no_experiments)]
+        entropies = []
+
         for i in range(self.no_experiments):
-            path = self.partial_path
-            path += str(i + 1)
-            path += rest_of_path
+            path = f"{self.partial_path}{i+1}{rest_of_path}"
             myExperiment = Experiment(path)
-            self.axis_descrtiption(myExperiment, xcol, ycol)
-            entropies[i] = myExperiment.get_entropy(xcol, ycol)
+            self.set_axis_description(myExperiment, xcol, ycol) #FIXME sets multiple times
+            entropies.append(myExperiment.get_entropy(xcol, ycol))
 
         if plotdir:
             xdesc = self.x_axis
             ydesc = self.y_axis
-            if myExperiment.sidechain:
+            if myExperiment.sidechain: #FIXME improper reference to myExperiment - known from 'rest of path'
                 plotFile = f"{plotdir}hist{xdesc[0:1]}_{ydesc[0:1]}.pdf"
             else:
                 plotFile = f"{plotdir}hist{xdesc[0:4]}_{ydesc[0:4]}.pdf"
@@ -263,26 +251,19 @@ class SetOfExperiments:
 
         first_mers = [mer + 1 for mer in range(no_mers)]
 
-        median_entropy = [0.0 for _ in range(no_mers)]
-        entropy_perc5 = [0.0 for _ in range(no_mers)]
-        entropy_perc95 = [0.0 for _ in range(no_mers)]
+        median_entropy = []
+        entropy_perc5 = []
+        entropy_perc95 = []
 
         for mer in range(no_mers):
-
-            rest_of_path = "_" + chain_type + "_" + ion + ".tab"
+            rest_of_path = f"_{chain_type}_{ion}.tab"
             if chain_type == "analysis":
-                entropies = np.array(
-                    self.hist_of_entropy(rest_of_path,
-                                         xcol + 4 * mer, ycol + 4 * mer
-                                         )
-                )
+                entropies = np.array(self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer))
             elif chain_type == "sidechain":
-                entropies = np.array(
-                    self.hist_of_entropy(rest_of_path, xcol + mer, ycol + mer)
-                )
-            median_entropy[mer] = np.median(entropies)
-            entropy_perc5[mer] = np.percentile(entropies, 5)
-            entropy_perc95[mer] = np.percentile(entropies, 95)
+                entropies = np.array(self.hist_of_entropy(rest_of_path, xcol + mer, ycol + mer))
+            median_entropy.append( np.median(entropies) )
+            entropy_perc5.append( np.percentile(entropies, 5) )
+            entropy_perc95.append( np.percentile(entropies, 95) )
 
         if chain_type == "sidechain":
             xdesc = self.x_axis[0:1]
@@ -295,12 +276,8 @@ class SetOfExperiments:
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
         myxlabel = "number of first mer"
 
-        plt.plot(
-            first_mers, median_entropy, "o--", color="red", label="median"
-        )
-        plt.plot(
-            first_mers, entropy_perc5, ":", color="red", label="5 and 95 perc."
-        )
+        plt.plot(first_mers, median_entropy, "o--", color="red", label="median")
+        plt.plot(first_mers, entropy_perc5, ":", color="red", label="5 and 95 perc.")
         plt.plot(first_mers, entropy_perc95, ":", color="red", label=None)
         plt.legend()
         plt.title(mytitle)
@@ -323,30 +300,18 @@ class SetOfExperiments:
     ):
 
         """  compute percentiles of the histogram of entropies """
-
         no_struct = 12
-
         first_mers = [mer + 1 for mer in range(no_mers)]
-
         print("highest first mer", first_mers[-1])
-
         entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
         # i = 0
 
         for mer in range(no_mers):
-
-            rest_of_path = "_" + chain_type + "_" + ion + ".tab"
-
+            rest_of_path = f"_{chain_type}_{ion}.tab"
             if chain_type == "analysis":
-                entropies[mer] = np.array(
-                    self.hist_of_entropy(rest_of_path,
-                                         xcol + 4 * mer, ycol + 4 * mer
-                                         )
-                )
+                entropies[mer] = np.array(self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer))
             elif chain_type == "sidechain":
-                entropies[mer] = np.array(
-                    self.hist_of_entropy(rest_of_path, xcol + mer, ycol + mer)
-                )
+                entropies[mer] = np.array(self.hist_of_entropy(rest_of_path, xcol + mer, ycol + mer))
 
         if chain_type == "sidechain":
             xdesc = self.x_axis[0:1]
@@ -362,9 +327,7 @@ class SetOfExperiments:
         for j in range(no_struct):
 
             color = 5 / 6 * (1 - j / no_struct) * np.array((1, 1, 1))
-
             e = [entropies[i][j] for i in range(no_mers)]
-
             plt.plot(first_mers, e, label=f"{j+1}", color=color)
 
         plt.legend()
