@@ -59,16 +59,11 @@ class Experiment:
     def correct_signs(self, x, thres: float = 0.5):
         """ if the sign of the angle is artificially reversed,
         we reverse it back"""
-        x_cor = [el for el in x]
+        x_cor = np.array(x)
 
         for i in range(len(x_cor) - 1):
             if np.abs(x_cor[i] + x_cor[i + 1]) < thres * np.abs(x_cor[i + 1]):
-
-                x_cor[i + 1: -1] = [-el for el in x_cor[i + 1: -1]]
-
-        if np.abs(x_cor[-1] + x_cor[-2]) < thres * np.abs(x_cor[-1]):
-            x_cor[-1] = -x_cor[-1]
-
+                x_cor[i + 1:] *= -1
         return x_cor
 
     def getColumnName(self, col: int):
@@ -194,6 +189,8 @@ class SetOfExperiments:
     this class represents a set of experiments of entropy calculation
      performed in a series of files for statistics
     """
+    magic_numbers = { 'analysis': 4,
+                      'sidechain' : 1 }
 
     def __init__(self, partial_path: str, no_experiments: int = 12):
         self.partial_path = partial_path
@@ -205,13 +202,13 @@ class SetOfExperiments:
         self.x_axis, _ = myExperiment.getColumnName(xcol)
         self.y_axis, _ = myExperiment.getColumnName(ycol)
 
-    def hist_of_entropy(self, rest_of_path: str, xcol: int, ycol: int, plotdir: str = None):
+    def hist_of_entropy(self, chain_type: str, ion: str, xcol: int, ycol: int, plotdir: str = None):
         """ compute histogram of entropy over realisations """
 
         entropies = []
 
         for i in range(self.no_experiments):
-            path = f"{self.partial_path}{i+1}{rest_of_path}"
+            path = f"{self.partial_path}{i+1}_{chain_type}_{ion}.tab"
             myExperiment = Experiment(path)
             self.set_axis_description(myExperiment, xcol, ycol) #FIXME sets multiple times
             entropies.append(myExperiment.get_entropy(xcol, ycol))
@@ -219,17 +216,14 @@ class SetOfExperiments:
         if plotdir:
             xdesc = self.x_axis
             ydesc = self.y_axis
-            if myExperiment.sidechain: #FIXME improper reference to myExperiment - known from 'rest of path'
-                plotFile = f"{plotdir}hist{xdesc[0:1]}_{ydesc[0:1]}.pdf"
-            else:
-                plotFile = f"{plotdir}hist{xdesc[0:4]}_{ydesc[0:4]}.pdf"
-            mytitle = f"{rest_of_path}"
+            plotFile = f"{plotdir}hist{xdesc[0:self.magic_numbers[chain_type]]}_{ydesc[0:self.magic_numbers[chain_type]]}.pdf"
+            mytitle = f"{chain_type} {ion}"
             myxlabel = f"entropy {xdesc} vs. {ydesc}"
             myylabel = "frequency"
 
             fig, ax = plt.subplots()
             plt.hist(entropies, bins=5)
-            plt.title(mytitle[1:-4])
+            plt.title(mytitle)
             plt.xlabel(myxlabel)
             plt.ylabel(myylabel)
 
@@ -237,40 +231,22 @@ class SetOfExperiments:
             plt.clf()
         return entropies
 
-    def entropy_distribution_percentiles(
-        self,
-        chain_type: str,
-        ion,
-        xcol: int,
-        ycol: int,
-        plotdir: str,
-        no_mers: int = 23,
-    ):
-
+    def entropy_distribution_percentiles(self, chain_type: str, ion, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
-
-        first_mers = [mer + 1 for mer in range(no_mers)]
+        first_mers = list(range(1,no_mers+1))
 
         median_entropy = []
         entropy_perc5 = []
         entropy_perc95 = []
 
         for mer in range(no_mers):
-            rest_of_path = f"_{chain_type}_{ion}.tab"
-            if chain_type == "analysis":
-                entropies = np.array(self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer))
-            elif chain_type == "sidechain":
-                entropies = np.array(self.hist_of_entropy(rest_of_path, xcol + mer, ycol + mer))
+            entropies = np.array(self.hist_of_entropy(chain_type, ion, xcol + self.magic_numbers[chain_type] * mer, ycol + self.magic_numbers[chain_type] * mer))
             median_entropy.append( np.median(entropies) )
             entropy_perc5.append( np.percentile(entropies, 5) )
             entropy_perc95.append( np.percentile(entropies, 95) )
 
-        if chain_type == "sidechain":
-            xdesc = self.x_axis[0:1]
-            ydesc = self.y_axis[0:1]
-        else:
-            xdesc = self.x_axis[0:4]
-            ydesc = self.y_axis[0:4]
+        xdesc = self.x_axis[0:self.magic_numbers[chain_type]]
+        ydesc = self.y_axis[0:self.magic_numbers[chain_type]]
 
         mytitle = f"{chain_type}, ion {ion}"
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
@@ -289,43 +265,24 @@ class SetOfExperiments:
 
         return median_entropy
 
-    def entropy_distribution_realisations(
-        self,
-        chain_type: str,
-        ion,
-        xcol: int,
-        ycol: int,
-        plotdir: str,
-        no_mers: int = 23,
-    ):
-
+    def entropy_distribution_realisations(self, chain_type: str, ion, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
         no_struct = 12
-        first_mers = [mer + 1 for mer in range(no_mers)]
+        first_mers = list(range(1,no_mers+1))
         print("highest first mer", first_mers[-1])
         entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
-        # i = 0
 
         for mer in range(no_mers):
-            rest_of_path = f"_{chain_type}_{ion}.tab"
-            if chain_type == "analysis":
-                entropies[mer] = np.array(self.hist_of_entropy(rest_of_path, xcol + 4 * mer, ycol + 4 * mer))
-            elif chain_type == "sidechain":
-                entropies[mer] = np.array(self.hist_of_entropy(rest_of_path, xcol + mer, ycol + mer))
+            entropies[mer] = np.array(self.hist_of_entropy(chain_type, ion, xcol + self.magic_numbers[chain_type] * mer, ycol + self.magic_numbers[chain_type] * mer))
 
-        if chain_type == "sidechain":
-            xdesc = self.x_axis[0:1]
-            ydesc = self.y_axis[0:1]
-        else:
-            xdesc = self.x_axis[0:4]
-            ydesc = self.y_axis[0:4]
+        xdesc = self.x_axis[0:self.magic_numbers[chain_type]]
+        ydesc = self.y_axis[0:self.magic_numbers[chain_type]]
 
         mytitle = f"{chain_type}, ion {ion}"
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
         myxlabel = "number of first mer"
 
         for j in range(no_struct):
-
             color = 5 / 6 * (1 - j / no_struct) * np.array((1, 1, 1))
             e = [entropies[i][j] for i in range(no_mers)]
             plt.plot(first_mers, e, label=f"{j+1}", color=color)

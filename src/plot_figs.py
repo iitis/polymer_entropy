@@ -56,9 +56,9 @@ if __name__ == "__main__":
 
     x = 8
     y = 9
-    mySetOfExperiments.hist_of_entropy("_analysis_Ca.tab", x, y, args.plotdir)
+    mySetOfExperiments.hist_of_entropy("analysis", "Ca", x, y, args.plotdir)
     y = 32
-    mySetOfExperiments.hist_of_entropy("_sidechain_Ca.tab", x, y, args.plotdir)
+    mySetOfExperiments.hist_of_entropy("sidechain", "Ca", x, y, args.plotdir)
 
     for ion in ["Ca", "Mg", "Na"]:
 
