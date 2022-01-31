@@ -4,10 +4,10 @@ A module holding Experiment class that represent entire dataset
 """
 from collections import namedtuple
 
+import os
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
-import os
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 
@@ -140,7 +140,7 @@ class Experiment:
         x = self.dataframe.iloc[:, xcol]
         x = correct_signs(x)
 
-        fig, ax = plt.subplots()
+        plt.subplots()
         plt.hist2d(x, y, bins=10, cmap=plt.cm.Reds)
         plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
         plt.xlabel(myxlab)

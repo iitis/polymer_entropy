@@ -8,8 +8,8 @@ If more than one is dropped warning is displayed.
 import argparse
 import os
 
-from experiment import Experiment, SetOfExperiments
 from collections import namedtuple
+from experiment import Experiment, SetOfExperiments
 
 plotDirectory = "plots"
 
