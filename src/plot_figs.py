@@ -40,8 +40,8 @@ if __name__ == "__main__":
         myExperiment.drop_first_observations()
         myExperiment.plot_columns(8, os.path.join(args.plotdir, f"{i}Ca_"))
         # myExperiment.plotColumns(99, args.plotdir)  # maximal value 99
-        myExperiment.plotHistogram2D(8, 9, os.path.join(args.plotdir, f"{i}Ca_"))
-        myExperiment.plotHistogram2D(12, 13, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_histogram_2d(8, 9, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_histogram_2d(12, 13, os.path.join(args.plotdir, f"{i}Ca_"))
     for i in [1, 2]:
         file_path = os.path.join(args.datafolder, f"Albumin+HA_{i}_sidechain_Ca.tab")
 
