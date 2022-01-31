@@ -11,6 +11,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 
+ColumnMeaning = namedtuple("ColumnMeaning", "description unit")
 
 class Experiment:
     """
@@ -18,7 +19,6 @@ class Experiment:
     from angles from the single file
     """
 
-    ColumnMeaning = namedtuple("ColumnMeaning", "description unit")
     columns = {
         0: ColumnMeaning("Time", "ps"),
         1: ColumnMeaning("Total energy of the system", "kJ/mol"),
@@ -28,10 +28,10 @@ class Experiment:
         5: ColumnMeaning("Total planar energy", "kJ/mol"),
         6: ColumnMeaning("Total Coulomb energy", "kJ/mol"),
         7: ColumnMeaning("Total Van der Waals energy", "kJ/mol"),
-        8: ColumnMeaning("ϕ₁₄ ", "deg"),  # mer 1 - mer 2
-        9: ColumnMeaning("ψ₁₄ ", "deg"),  # mer 1 - mer 2
-        10: ColumnMeaning("ϕ₁₃ ", "deg"),  # mer 1 - mer 2
-        11: ColumnMeaning("ψ₁₃ ", "deg"),  # mer 1 - mer 2
+        8: ColumnMeaning("ϕ₁₄", "deg"),  # mer 1 - mer 2
+        9: ColumnMeaning("ψ₁₄", "deg"),  # mer 1 - mer 2
+        10: ColumnMeaning("ϕ₁₃", "deg"),  # mer 1 - mer 2
+        11: ColumnMeaning("ψ₁₃", "deg"),  # mer 1 - mer 2
         # next 4  (12-15)  mer 2 - mer 3
         # up to mer 23 - mer 24
     }
@@ -45,41 +45,36 @@ class Experiment:
         5: ColumnMeaning("Total planar energy", "kJ/mol"),
         6: ColumnMeaning("Total Coulomb energy", "kJ/mol"),
         7: ColumnMeaning("Total Van der Waals energy", "kJ/mol"),
-        8: ColumnMeaning("γ ", "deg"),  # mer 1 - mer 2
+        8: ColumnMeaning("γ", "deg"),  # mer 1 - mer 2
         # next mer 2 - mer 3
         # up to mer 23 - mer 24
-        32: ColumnMeaning("ω ", "deg"),  # mer 1 - mer 2
+        32: ColumnMeaning("ω", "deg"),  # mer 1 - mer 2
         56: ColumnMeaning("δ", "deg"),  # mer 1 - mer 2
     }
 
     def __init__(self, filepath: str):
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
-        self.sidechain = "sidechain" in filepath
-
+        self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
 
     def get_column_name(self, col: int):
         """ this is for analysis data """
-        if not self.sidechain:
+        if self.chain == 'main chain':
             if col < 8:
-                return self.columns[col].description, self.columns[col].unit
+                return Experiment.columns[col]
             offset = col % 4 + 8
             mer = col // 4 - 1
-            desc = self.columns[offset].description
-            desc += f"mers {mer},{mer + 1}"
-            unit = self.columns[offset].unit
-            return desc, unit
+            desc = f"{Experiment.columns[offset].description} mers {mer},{mer + 1}"
+            unit = Experiment.columns[offset].unit
+            return ColumnMeaning(desc, unit)
         # this is the side chain
         if col < 8:
-            desc = self.columns_side[col].description
-            unit = self.columns_side[col].unit
-            return desc, unit
+            return Experiment.columns_side[col]
         mer = (col - 8) % 24 + 1
         i = (col - 8) // 24
         i = i * 24 + 8
-        desc = self.columns_side[i].description
-        desc += f"mers {mer},{mer + 1}"
-        unit = self.columns_side[i].unit
-        return desc, unit
+        desc = f"{Experiment.columns_side[i].description} mers {mer},{mer + 1}"
+        unit = Experiment.columns_side[i].unit
+        return ColumnMeaning(desc, unit)
 
     def drop_first_observations(self):
         """
@@ -98,10 +93,7 @@ class Experiment:
         yname, yunit = self.get_column_name(ycol)
         myxlab = f"{xname}  [{xunit}]"
         myylab = f"{yname}  [{yunit}]"
-        if self.sidechain:
-            mytitle = f"side chain {xname} vs {yname}"
-        else:
-            mytitle = f"{xname} vs {yname}"
+        mytitle = f"{self.chain} {xname} vs {yname}"
 
         y = self.dataframe.iloc[:, ycol]
         x = self.dataframe.iloc[:, xcol]
@@ -113,27 +105,21 @@ class Experiment:
         plt.title(mytitle)
 
         if plotname:
-            if self.sidechain:
-                plotFile = f"{plotname}series_sidechain_{ycol}.pdf"
-            else:
-                plotFile = f"{plotname}series_{ycol}.pdf"
-            plt.savefig(plotFile)
+            plot_filepath = f"{plotname}series_{self.chain.replace(' ','')}_{ycol}.pdf"
+            plt.savefig(plot_filepath)
             plt.clf()
         else:
             plt.show()
 
-    def plotHistogram2D(self, xcol: int, ycol: int, plotname: str = None):
+    def plot_histogram_2d(self, xcol: int, ycol: int, plotname: str = None):
         """
         Plots one column vs another 2D histogram
         """
         xname, xunit = self.get_column_name(xcol)
         yname, yunit = self.get_column_name(ycol)
-        myxlab = f"{xname}   [{xunit}]"
-        myylab = f"{yname}   [{yunit}]"
-        if self.sidechain:
-            mytitle = "side chain Histogram 2D"
-        else:
-            mytitle = "Histogram 2D"
+        myxlab = f"{xname} [{xunit}]"
+        myylab = f"{yname} [{yunit}]"
+        mytitle = "{self.chain} Histogram 2D"
         y = self.dataframe.iloc[:, ycol]
         y = correct_signs(y)
 
@@ -147,11 +133,8 @@ class Experiment:
         plt.ylabel(myylab)
         plt.title(mytitle)
         if plotname:
-            if self.sidechain:
-                plotFile = f"{plotname}hist2D_side_{xcol}_{ycol}.pdf"
-            else:
-                plotFile = f"{plotname}hist2D_{xcol}_{ycol}.pdf"
-            plt.savefig(plotFile)
+            plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{xcol}_{ycol}.pdf"
+            plt.savefig(plot_filepath)
             plt.clf()
         else:
             plt.show()
@@ -181,36 +164,29 @@ class SetOfExperiments:
     magic_numbers = {'analysis': 4,
                      'sidechain' : 1}
 
-    def __init__(self, partial_path: str, no_experiments: int = 12):
-        self.partial_path = partial_path
+    def __init__(self, data_path: str, experiment_prefix: str, ion: str, chain: str, no_experiments: int = 12):
+        self.partial_path = os.path.join(data_path, f"{experiment_prefix}_")
+        self.ion = ion
+        assert chain in ['analysis', 'sidechain'], f"Incorrect chain type: {chain}"
+        self.chain = chain
         self.no_experiments = no_experiments
+        self.magic_number = self.magic_numbers[self.chain]
+        experiment_file_names = [f"{experiment_prefix}_{i+1}_{chain}_{ion}.tab" for i in range(no_experiments)]
+        self.experiments = [Experiment(os.path.join(data_path, fp)) for fp in experiment_file_names]
 
-    def set_axis_description(self, myExperiment, xcol: int, ycol: int):
-        """ this function will let us know which angle data
-         we are dealing with """
-        self.x_axis, _ = myExperiment.get_column_name(xcol)
-        self.y_axis, _ = myExperiment.get_column_name(ycol)
-
-    def hist_of_entropy(self, chain_type: str, ion: str, xcol: int, ycol: int, plotdir: str = None):
+    def hist_of_entropy(self, xcol: int, ycol: int, plotdir: str = None):
         """ compute histogram of entropy over realisations """
-
-        entropies = []
-
-        for i in range(self.no_experiments):
-            path = f"{self.partial_path}{i+1}_{chain_type}_{ion}.tab"
-            myExperiment = Experiment(path)
-            self.set_axis_description(myExperiment, xcol, ycol) #FIXME sets multiple times
-            entropies.append(myExperiment.get_entropy(xcol, ycol))
+        entropies = [experiment.get_entropy(xcol, ycol) for experiment in self.experiments]
 
         if plotdir:
-            xdesc = self.x_axis
-            ydesc = self.y_axis
-            plotFile = f"{plotdir}hist{xdesc[0:self.magic_numbers[chain_type]]}_{ydesc[0:self.magic_numbers[chain_type]]}.pdf"
-            mytitle = f"{chain_type} {ion}"
+            xdesc = self.experiments[0].get_column_name(xcol).description
+            ydesc = self.experiments[0].get_column_name(ycol).description
+            plotFile = f"{plotdir}hist{xdesc}_{ydesc}.pdf"
+            mytitle = f"{self.chain} {self.ion}"
             myxlabel = f"entropy {xdesc} vs. {ydesc}"
             myylabel = "frequency"
 
-            fig, ax = plt.subplots()
+            plt.subplots()
             plt.hist(entropies, bins=5)
             plt.title(mytitle)
             plt.xlabel(myxlabel)
@@ -220,7 +196,7 @@ class SetOfExperiments:
             plt.clf()
         return entropies
 
-    def entropy_distribution_percentiles(self, chain_type: str, ion, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
+    def entropy_distribution_percentiles(self, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
         first_mers = list(range(1, no_mers+1))
 
@@ -229,15 +205,15 @@ class SetOfExperiments:
         entropy_perc95 = []
 
         for mer in range(no_mers):
-            entropies = np.array(self.hist_of_entropy(chain_type, ion, xcol + self.magic_numbers[chain_type] * mer, ycol + self.magic_numbers[chain_type] * mer))
+            entropies = np.array(self.hist_of_entropy(xcol + self.magic_number * mer, ycol + self.magic_number * mer))
             median_entropy.append(np.median(entropies))
             entropy_perc5.append(np.percentile(entropies, 5))
             entropy_perc95.append(np.percentile(entropies, 95))
 
-        xdesc = self.x_axis[0:self.magic_numbers[chain_type]]
-        ydesc = self.y_axis[0:self.magic_numbers[chain_type]]
+        xdesc = self.experiments[0].get_column_name(xcol).description
+        ydesc = self.experiments[0].get_column_name(ycol).description
 
-        mytitle = f"{chain_type}, ion {ion}"
+        mytitle = f"{self.chain}, ion {self.ion}"
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
         myxlabel = "number of first mer"
 
@@ -248,13 +224,13 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = os.path.join(plotdir, f"entropy_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
-        plt.savefig(plotFile)
+        plot_filepath = os.path.join(plotdir, f"entropy_{self.chain}_{self.ion}_{xdesc}_{ydesc}.pdf")
+        plt.savefig(plot_filepath)
         plt.clf()
 
         return median_entropy
 
-    def entropy_distribution_realisations(self, chain_type: str, ion, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
+    def entropy_distribution_realisations(self, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
         no_struct = 12
         first_mers = list(range(1, no_mers+1))
@@ -262,12 +238,12 @@ class SetOfExperiments:
         entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
 
         for mer in range(no_mers):
-            entropies[mer] = np.array(self.hist_of_entropy(chain_type, ion, xcol + self.magic_numbers[chain_type] * mer, ycol + self.magic_numbers[chain_type] * mer))
+            entropies[mer] = np.array(self.hist_of_entropy(xcol + self.magic_number * mer, ycol + self.magic_number * mer))
 
-        xdesc = self.x_axis[0:self.magic_numbers[chain_type]]
-        ydesc = self.y_axis[0:self.magic_numbers[chain_type]]
+        xdesc = self.experiments[0].get_column_name(xcol).description
+        ydesc = self.experiments[0].get_column_name(ycol).description
 
-        mytitle = f"{chain_type}, ion {ion}"
+        mytitle = f"{self.chain}, ion {self.ion}"
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
         myxlabel = "number of first mer"
 
@@ -280,8 +256,8 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = os.path.join(plotdir, f"entropy_reals_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
-        plt.savefig(plotFile)
+        plot_filepath = os.path.join(plotdir, f"entropy_reals_{self.chain}_{self.ion}_{xdesc}_{ydesc}.pdf")
+        plt.savefig(plot_filepath)
         plt.clf()
 
 def correct_signs(series, thres: float = 0.5):

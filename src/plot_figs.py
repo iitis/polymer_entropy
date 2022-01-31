@@ -49,29 +49,31 @@ if __name__ == "__main__":
         myExperiment.drop_first_observations()
         myExperiment.plot_columns(8, os.path.join(args.plotdir, f"{i}Ca_"))
 
-        myExperiment.plotHistogram2D(8, 32, os.path.join(args.plotdir, f"{i}Ca_"))
-        myExperiment.plotHistogram2D(9, 33, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_histogram_2d(8, 32, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_histogram_2d(9, 33, os.path.join(args.plotdir, f"{i}Ca_"))
 
-    mySetOfExperiments = SetOfExperiments(os.path.join(args.datafolder, "Albumin+HA_"))
+    mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", "Ca", "analysis")
 
     x = 8
     y = 9
-    mySetOfExperiments.hist_of_entropy("analysis", "Ca", x, y, args.plotdir)
+    mySetOfExperiments.hist_of_entropy(x, y, args.plotdir)
     y = 32
-    mySetOfExperiments.hist_of_entropy("sidechain", "Ca", x, y, args.plotdir)
+
+    mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", "Ca", "sidechain")
+    mySetOfExperiments.hist_of_entropy(x, y, args.plotdir)
 
     for ion in ["Ca", "Mg", "Na"]:
 
-        mode = "analysis"
+        mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", ion, "analysis")
         startingPoints = [Point(8, 9), Point(10, 11), Point(8, 10)]
 
         for p in startingPoints:
-            mySetOfExperiments.entropy_distribution_percentiles(mode, ion, p.x, p.y, args.plotdir)
-            mySetOfExperiments.entropy_distribution_realisations(mode, ion, p.x, p.y, args.plotdir)
+            mySetOfExperiments.entropy_distribution_percentiles(p.x, p.y, args.plotdir)
+            mySetOfExperiments.entropy_distribution_realisations(p.x, p.y, args.plotdir)
 
-        mode = "sidechain"
+        mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", ion, "sidechain")
         startingPoints = [Point(8, 32), Point(8, 56), Point(32, 56)]
 
         for p in startingPoints:
-            mySetOfExperiments.entropy_distribution_percentiles(mode, ion, p.x, p.y, args.plotdir)
-            mySetOfExperiments.entropy_distribution_realisations(mode, ion, p.x, p.y, args.plotdir)
+            mySetOfExperiments.entropy_distribution_percentiles(p.x, p.y, args.plotdir)
+            mySetOfExperiments.entropy_distribution_realisations(p.x, p.y, args.plotdir)
