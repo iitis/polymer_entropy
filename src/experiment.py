@@ -56,57 +56,46 @@ class Experiment:
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.sidechain = "sidechain" in filepath
 
-    def correct_signs(self, x, thres: float = 0.5):
-        """ if the sign of the angle is artificially reversed,
-        we reverse it back"""
-        x_cor = np.array(x)
 
-        for i in range(len(x_cor) - 1):
-            if np.abs(x_cor[i] + x_cor[i + 1]) < thres * np.abs(x_cor[i + 1]):
-                x_cor[i + 1:] *= -1
-        return x_cor
-
-    def getColumnName(self, col: int):
+    def get_column_name(self, col: int):
         """ this is for analysis data """
         if not self.sidechain:
             if col < 8:
                 return self.columns[col].description, self.columns[col].unit
-            else:
-                offset = col % 4 + 8
-                mer = col // 4 - 1
-                desc = self.columns[offset].description
-                desc += f"mers {mer},{mer + 1}"
-                unit = self.columns[offset].unit
-                return desc, unit
-        else:  # this is the mian chain
-            if col < 8:
-                desc = self.columns_side[col].description
-                unit = self.columns_side[col].unit
-                return desc, unit
-            else:
-                mer = (col - 8) % 24 + 1
-                i = (col - 8) // 24
-                i = i * 24 + 8
-                desc = self.columns_side[i].description
-                desc += f"mers {mer},{mer + 1}"
-                unit = self.columns_side[i].unit
-                return desc, unit
+            offset = col % 4 + 8
+            mer = col // 4 - 1
+            desc = self.columns[offset].description
+            desc += f"mers {mer},{mer + 1}"
+            unit = self.columns[offset].unit
+            return desc, unit
+        # this is the side chain
+        if col < 8:
+            desc = self.columns_side[col].description
+            unit = self.columns_side[col].unit
+            return desc, unit
+        mer = (col - 8) % 24 + 1
+        i = (col - 8) // 24
+        i = i * 24 + 8
+        desc = self.columns_side[i].description
+        desc += f"mers {mer},{mer + 1}"
+        unit = self.columns_side[i].unit
+        return desc, unit
 
-    def dropFirstObservations(self):
+    def drop_first_observations(self):
         """
         Drops first observations so that only points after stabilisation are
         further considered
         """
         self.dataframe.drop(index=self.dataframe.index[0], axis=0, inplace=True)
 
-    def plotColumns(self, ycol: int, plotname: str = None):
+    def plot_columns(self, ycol: int, plotname: str = None):
         """
         Plots one column vs another (time by default).
         Stores to pdf file if plot name is provided.
         """
         xcol = 0
-        xname, xunit = self.getColumnName(xcol)
-        yname, yunit = self.getColumnName(ycol)
+        xname, xunit = self.get_column_name(xcol)
+        yname, yunit = self.get_column_name(ycol)
         myxlab = f"{xname}  [{xunit}]"
         myylab = f"{yname}  [{yunit}]"
         if self.sidechain:
@@ -116,7 +105,7 @@ class Experiment:
 
         y = self.dataframe.iloc[:, ycol]
         x = self.dataframe.iloc[:, xcol]
-        y = self.correct_signs(y)
+        y = correct_signs(y)
 
         plt.plot(x, y)
         plt.xlabel(myxlab)
@@ -137,8 +126,8 @@ class Experiment:
         """
         Plots one column vs another 2D histogram
         """
-        xname, xunit = self.getColumnName(xcol)
-        yname, yunit = self.getColumnName(ycol)
+        xname, xunit = self.get_column_name(xcol)
+        yname, yunit = self.get_column_name(ycol)
         myxlab = f"{xname}   [{xunit}]"
         myylab = f"{yname}   [{yunit}]"
         if self.sidechain:
@@ -146,10 +135,10 @@ class Experiment:
         else:
             mytitle = "Histogram 2D"
         y = self.dataframe.iloc[:, ycol]
-        y = self.correct_signs(y)
+        y = correct_signs(y)
 
         x = self.dataframe.iloc[:, xcol]
-        x = self.correct_signs(x)
+        x = correct_signs(x)
 
         fig, ax = plt.subplots()
         plt.hist2d(x, y, bins=10, cmap=plt.cm.Reds)
@@ -171,11 +160,11 @@ class Experiment:
         """
         computes entropy from histogram of xcol vs. ycol
         """
-        self.dropFirstObservations()
+        self.drop_first_observations()
         y = self.dataframe.iloc[:, ycol]
-        y = self.correct_signs(y)
+        y = correct_signs(y)
         x = self.dataframe.iloc[:, xcol]
-        x = self.correct_signs(x)
+        x = correct_signs(x)
 
         h = np.histogram2d(x, y, bins=10)
         h_vec = np.concatenate(h[0])
@@ -189,8 +178,8 @@ class SetOfExperiments:
     this class represents a set of experiments of entropy calculation
      performed in a series of files for statistics
     """
-    magic_numbers = { 'analysis': 4,
-                      'sidechain' : 1 }
+    magic_numbers = {'analysis': 4,
+                     'sidechain' : 1}
 
     def __init__(self, partial_path: str, no_experiments: int = 12):
         self.partial_path = partial_path
@@ -199,8 +188,8 @@ class SetOfExperiments:
     def set_axis_description(self, myExperiment, xcol: int, ycol: int):
         """ this function will let us know which angle data
          we are dealing with """
-        self.x_axis, _ = myExperiment.getColumnName(xcol)
-        self.y_axis, _ = myExperiment.getColumnName(ycol)
+        self.x_axis, _ = myExperiment.get_column_name(xcol)
+        self.y_axis, _ = myExperiment.get_column_name(ycol)
 
     def hist_of_entropy(self, chain_type: str, ion: str, xcol: int, ycol: int, plotdir: str = None):
         """ compute histogram of entropy over realisations """
@@ -233,7 +222,7 @@ class SetOfExperiments:
 
     def entropy_distribution_percentiles(self, chain_type: str, ion, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
-        first_mers = list(range(1,no_mers+1))
+        first_mers = list(range(1, no_mers+1))
 
         median_entropy = []
         entropy_perc5 = []
@@ -241,9 +230,9 @@ class SetOfExperiments:
 
         for mer in range(no_mers):
             entropies = np.array(self.hist_of_entropy(chain_type, ion, xcol + self.magic_numbers[chain_type] * mer, ycol + self.magic_numbers[chain_type] * mer))
-            median_entropy.append( np.median(entropies) )
-            entropy_perc5.append( np.percentile(entropies, 5) )
-            entropy_perc95.append( np.percentile(entropies, 95) )
+            median_entropy.append(np.median(entropies))
+            entropy_perc5.append(np.percentile(entropies, 5))
+            entropy_perc95.append(np.percentile(entropies, 95))
 
         xdesc = self.x_axis[0:self.magic_numbers[chain_type]]
         ydesc = self.y_axis[0:self.magic_numbers[chain_type]]
@@ -259,7 +248,7 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plotFile = os.path.join(plotdir,f"entropy_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
+        plotFile = os.path.join(plotdir, f"entropy_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
         plt.savefig(plotFile)
         plt.clf()
 
@@ -268,7 +257,7 @@ class SetOfExperiments:
     def entropy_distribution_realisations(self, chain_type: str, ion, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
         no_struct = 12
-        first_mers = list(range(1,no_mers+1))
+        first_mers = list(range(1, no_mers+1))
         print("highest first mer", first_mers[-1])
         entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
 
@@ -294,3 +283,13 @@ class SetOfExperiments:
         plotFile = os.path.join(plotdir, f"entropy_reals_{chain_type}_{ion}_{xdesc}_{ydesc}.pdf")
         plt.savefig(plotFile)
         plt.clf()
+
+def correct_signs(series, thres: float = 0.5):
+    """ if the sign of the angle is artificially reversed,
+    we reverse it back"""
+    series_corrected = np.array(series)
+
+    for i in range(len(series_corrected) - 1):
+        if np.abs(series_corrected[i] + series_corrected[i + 1]) < thres * np.abs(series_corrected[i + 1]):
+            series_corrected[i + 1:] *= -1
+    return series_corrected
