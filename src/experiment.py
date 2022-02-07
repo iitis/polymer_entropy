@@ -200,10 +200,10 @@ class SetOfExperiments:
         no_struct = 12
         first_mers = list(range(1, no_mers+1))
         print("highest first mer", first_mers[-1])
-        entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
+        entropies = []
 
         for mer in range(no_mers):
-            entropies[mer] = np.array(self.hist_of_entropy(xcol + self.magic_number * mer, ycol + self.magic_number * mer))
+            entropies.append(np.array(self.hist_of_entropy(xcol + self.magic_number * mer, ycol + self.magic_number * mer)))
 
         xdesc = self.experiments[0].columns[xcol].description
         ydesc = self.experiments[0].columns[ycol].description
