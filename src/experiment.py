@@ -84,7 +84,7 @@ class Experiment:
         """
         Plots one column vs another 2D histogram
         """
-        mytitle = "{self.chain} Histogram 2D"
+        mytitle = f"{self.chain} Histogram 2D"
         y = self.dataframe.iloc[:, ycol]
         y = correct_signs(y)
 

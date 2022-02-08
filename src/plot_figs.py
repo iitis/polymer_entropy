@@ -38,19 +38,18 @@ if __name__ == "__main__":
 
         myExperiment = Experiment(file_path)
         myExperiment.drop_first_observations()
-        myExperiment.plot_columns(8, os.path.join(args.plotdir, f"{i}Ca_"))
-        # myExperiment.plotColumns(99, args.plotdir)  # maximal value 99
-        myExperiment.plot_histogram_2d(8, 9, os.path.join(args.plotdir, f"{i}Ca_"))
-        myExperiment.plot_histogram_2d(12, 13, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_Ca_"))
+
+        myExperiment.plot_histogram_2d(8, 9, os.path.join(args.plotdir, f"realisation{i}_Ca_"))
     for i in [1, 2]:
         file_path = os.path.join(args.datafolder, f"Albumin+HA_{i}_sidechain_Ca.tab")
 
         myExperiment = Experiment(file_path)
         myExperiment.drop_first_observations()
-        myExperiment.plot_columns(8, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_Ca_"))
 
-        myExperiment.plot_histogram_2d(8, 32, os.path.join(args.plotdir, f"{i}Ca_"))
-        myExperiment.plot_histogram_2d(9, 33, os.path.join(args.plotdir, f"{i}Ca_"))
+        myExperiment.plot_histogram_2d(8, 31, os.path.join(args.plotdir, f"realisation{i}_Ca_"))
+
 
     mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", "Ca", "analysis")
 
