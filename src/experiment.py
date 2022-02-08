@@ -147,8 +147,8 @@ class SetOfExperiments:
             xdesc = self.experiments[0].columns[xcol].description
             ydesc = self.experiments[0].columns[ycol].description
             plotFile = os.path.join(plotdir,f"hist{xdesc}_{ydesc}.pdf")
-            #plotFile = f"{plotdir}/hist{xdesc}_{ydesc}.pdf"
             mytitle = f"{self.chain} {self.ion}"
+            mytitle = mytitle.replace("analysis", "main chain")
             myxlabel = f"entropy {xdesc} vs. {ydesc}"
             myylabel = "frequency"
 
@@ -185,6 +185,7 @@ class SetOfExperiments:
         assert xdesc[sepx+1:] == ydesc[sepy+1:]
 
         mytitle = f"{self.chain}, ion {self.ion}"
+        mytitle = mytitle.replace("analysis", "main chain")
         myylabel = f"entropy  {xdesc[0:sepx]} vs. {ydesc[0:sepy]}"
         myxlabel = f"mers x, x+1, starting at {xdesc[sepx+1:]}"
 
@@ -218,6 +219,7 @@ class SetOfExperiments:
         assert xdesc[sepx+1:] == ydesc[sepy+1:]
 
         mytitle = f"{self.chain}, ion {self.ion}"
+        mytitle = mytitle.replace("analysis", "main chain")
         myylabel = f"entropy  {xdesc[0:sepx]} vs. {ydesc[0:sepy]}"
         myxlabel = f"mers x, x+1, starting at {xdesc[sepx+1:]}"
 
