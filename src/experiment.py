@@ -146,7 +146,8 @@ class SetOfExperiments:
         if plotdir:
             xdesc = self.experiments[0].columns[xcol].description
             ydesc = self.experiments[0].columns[ycol].description
-            plotFile = f"{plotdir}/hist{xdesc}_{ydesc}.pdf"
+            plotFile = os.path.join(plotdir,f"hist{xdesc}_{ydesc}.pdf")
+            #plotFile = f"{plotdir}/hist{xdesc}_{ydesc}.pdf"
             mytitle = f"{self.chain} {self.ion}"
             myxlabel = f"entropy {xdesc} vs. {ydesc}"
             myylabel = "frequency"
@@ -204,7 +205,6 @@ class SetOfExperiments:
         """  compute percentiles of the histogram of entropies """
         no_struct = 12
         first_mers = list(range(1, no_mers+1))
-        print("n.o. mers", first_mers[-1]+1)
         entropies = []
 
         for mer in range(no_mers):
