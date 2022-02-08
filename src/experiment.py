@@ -2,8 +2,6 @@
 A module holding Experiment class that represent entire dataset
  from a file along with basic operations on it.
 """
-from collections import namedtuple
-
 import os
 import matplotlib.ticker as mtick
 import numpy as np
@@ -11,70 +9,43 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 
-ColumnMeaning = namedtuple("ColumnMeaning", "description unit")
+class ColumnMeaning:
+    """Describes contents of a column"""
+    def __init__(self, description: str, unit: str):
+        self.description = description
+        self.unit = unit
+
+    def __str__(self):
+        return f"{self.description} [{self.unit}]"
 
 class Experiment:
     """
     A class that represent an experiment of entropy calculation
     from angles from the single file
     """
-
-    columns = {
-        0: ColumnMeaning("Time", "ps"),
-        1: ColumnMeaning("Total energy of the system", "kJ/mol"),
-        2: ColumnMeaning("Total bond energy", "kJ/mol"),
-        3: ColumnMeaning("Total angle energy", "kJ/mol"),
-        4: ColumnMeaning("Total dihedral energy", "kJ/mol"),
-        5: ColumnMeaning("Total planar energy", "kJ/mol"),
-        6: ColumnMeaning("Total Coulomb energy", "kJ/mol"),
-        7: ColumnMeaning("Total Van der Waals energy", "kJ/mol"),
-        8: ColumnMeaning("ϕ₁₄", "deg"),  # mer 1 - mer 2
-        9: ColumnMeaning("ψ₁₄", "deg"),  # mer 1 - mer 2
-        10: ColumnMeaning("ϕ₁₃", "deg"),  # mer 1 - mer 2
-        11: ColumnMeaning("ψ₁₃", "deg"),  # mer 1 - mer 2
-        # next 4  (12-15)  mer 2 - mer 3
-        # up to mer 23 - mer 24
-    }
-
-    columns_side = {
-        0: ColumnMeaning("Time", "ps"),
-        1: ColumnMeaning("Total energy of the system", "kJ/mol"),
-        2: ColumnMeaning("Total bond energy", "kJ/mol"),
-        3: ColumnMeaning("Total angle energy", "kJ/mol"),
-        4: ColumnMeaning("Total dihedral energy", "kJ/mol"),
-        5: ColumnMeaning("Total planar energy", "kJ/mol"),
-        6: ColumnMeaning("Total Coulomb energy", "kJ/mol"),
-        7: ColumnMeaning("Total Van der Waals energy", "kJ/mol"),
-        8: ColumnMeaning("γ", "deg"),  # mer 1 - mer 2
-        # next mer 2 - mer 3
-        # up to mer 23 - mer 24
-        32: ColumnMeaning("ω", "deg"),  # mer 1 - mer 2
-        56: ColumnMeaning("δ", "deg"),  # mer 1 - mer 2
-    }
-
     def __init__(self, filepath: str):
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
-
-    def get_column_name(self, col: int):
-        """ this is for analysis data """
+        self.columns = [
+            ColumnMeaning("Time", "ps"),
+            ColumnMeaning("Total energy of the system", "kJ/mol"),
+            ColumnMeaning("Total bond energy", "kJ/mol"),
+            ColumnMeaning("Total angle energy", "kJ/mol"),
+            ColumnMeaning("Total dihedral energy", "kJ/mol"),
+            ColumnMeaning("Total planar energy", "kJ/mol"),
+            ColumnMeaning("Total Coulomb energy", "kJ/mol"),
+            ColumnMeaning("Total Van der Waals energy", "kJ/mol"),
+        ]
         if self.chain == 'main chain':
-            if col < 8:
-                return Experiment.columns[col]
-            offset = col % 4 + 8
-            mer = col // 4 - 1
-            desc = f"{Experiment.columns[offset].description} mers {mer},{mer + 1}"
-            unit = Experiment.columns[offset].unit
-            return ColumnMeaning(desc, unit)
-        # this is the side chain
-        if col < 8:
-            return Experiment.columns_side[col]
-        mer = (col - 8) % 24 + 1
-        i = (col - 8) // 24
-        i = i * 24 + 8
-        desc = f"{Experiment.columns_side[i].description} mers {mer},{mer + 1}"
-        unit = Experiment.columns_side[i].unit
-        return ColumnMeaning(desc, unit)
+            angles = ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"]
+            for mer in range(23):
+                for angle in angles:
+                    self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+        elif self.chain == 'side chain':
+            angles = ["γ","ω","δ"]
+            for angle in angles:
+                for mer in range(23):
+                    self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
 
     def drop_first_observations(self):
         """
@@ -89,10 +60,8 @@ class Experiment:
         Stores to pdf file if plot name is provided.
         """
         xcol = 0
-        xname, xunit = self.get_column_name(xcol)
-        yname, yunit = self.get_column_name(ycol)
-        myxlab = f"{xname}  [{xunit}]"
-        myylab = f"{yname}  [{yunit}]"
+        xname = self.columns[xcol].description
+        yname = self.columns[ycol].description
         mytitle = f"{self.chain} {xname} vs {yname}"
 
         y = self.dataframe.iloc[:, ycol]
@@ -100,8 +69,8 @@ class Experiment:
         y = correct_signs(y)
 
         plt.plot(x, y)
-        plt.xlabel(myxlab)
-        plt.ylabel(myylab)
+        plt.xlabel(self.columns[xcol])
+        plt.ylabel(self.columns[ycol])
         plt.title(mytitle)
 
         if plotname:
@@ -115,10 +84,6 @@ class Experiment:
         """
         Plots one column vs another 2D histogram
         """
-        xname, xunit = self.get_column_name(xcol)
-        yname, yunit = self.get_column_name(ycol)
-        myxlab = f"{xname} [{xunit}]"
-        myylab = f"{yname} [{yunit}]"
         mytitle = "{self.chain} Histogram 2D"
         y = self.dataframe.iloc[:, ycol]
         y = correct_signs(y)
@@ -129,8 +94,8 @@ class Experiment:
         plt.subplots()
         plt.hist2d(x, y, bins=10, cmap=plt.cm.Reds)
         plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
-        plt.xlabel(myxlab)
-        plt.ylabel(myylab)
+        plt.xlabel(self.columns[xcol])
+        plt.ylabel(self.columns[ycol])
         plt.title(mytitle)
         if plotname:
             plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{xcol}_{ycol}.pdf"
@@ -179,8 +144,8 @@ class SetOfExperiments:
         entropies = [experiment.get_entropy(xcol, ycol) for experiment in self.experiments]
 
         if plotdir:
-            xdesc = self.experiments[0].get_column_name(xcol).description
-            ydesc = self.experiments[0].get_column_name(ycol).description
+            xdesc = self.experiments[0].columns[xcol].description
+            ydesc = self.experiments[0].columns[ycol].description
             plotFile = f"{plotdir}hist{xdesc}_{ydesc}.pdf"
             mytitle = f"{self.chain} {self.ion}"
             myxlabel = f"entropy {xdesc} vs. {ydesc}"
@@ -210,8 +175,8 @@ class SetOfExperiments:
             entropy_perc5.append(np.percentile(entropies, 5))
             entropy_perc95.append(np.percentile(entropies, 95))
 
-        xdesc = self.experiments[0].get_column_name(xcol).description
-        ydesc = self.experiments[0].get_column_name(ycol).description
+        xdesc = self.experiments[0].columns[xcol].description
+        ydesc = self.experiments[0].columns[ycol].description
 
         mytitle = f"{self.chain}, ion {self.ion}"
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
@@ -235,13 +200,13 @@ class SetOfExperiments:
         no_struct = 12
         first_mers = list(range(1, no_mers+1))
         print("highest first mer", first_mers[-1])
-        entropies = [[0.0 for i in range(no_struct)] for _ in range(no_mers)]
+        entropies = []
 
         for mer in range(no_mers):
-            entropies[mer] = np.array(self.hist_of_entropy(xcol + self.magic_number * mer, ycol + self.magic_number * mer))
+            entropies.append(np.array(self.hist_of_entropy(xcol + self.magic_number * mer, ycol + self.magic_number * mer)))
 
-        xdesc = self.experiments[0].get_column_name(xcol).description
-        ydesc = self.experiments[0].get_column_name(ycol).description
+        xdesc = self.experiments[0].columns[xcol].description
+        ydesc = self.experiments[0].columns[ycol].description
 
         mytitle = f"{self.chain}, ion {self.ion}"
         myylabel = f"entropy  {xdesc} vs. {ydesc}"
