@@ -57,7 +57,7 @@ if __name__ == "__main__":
     x = 8
     y = 9
     mySetOfExperiments.hist_of_entropy(x, y, args.plotdir)
-    y = 32
+    y = 31
 
     mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", "Ca", "sidechain")
     mySetOfExperiments.hist_of_entropy(x, y, args.plotdir)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             mySetOfExperiments.entropy_distribution_realisations(p.x, p.y, args.plotdir)
 
         mySetOfExperiments = SetOfExperiments(args.datafolder, "Albumin+HA", ion, "sidechain")
-        startingPoints = [Point(8, 32), Point(8, 56), Point(32, 56)]
+        startingPoints = [Point(8, 31), Point(8, 54), Point(31, 54)]
 
         for p in startingPoints:
             mySetOfExperiments.entropy_distribution_percentiles(p.x, p.y, args.plotdir)

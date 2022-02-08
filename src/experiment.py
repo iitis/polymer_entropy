@@ -146,7 +146,7 @@ class SetOfExperiments:
         if plotdir:
             xdesc = self.experiments[0].columns[xcol].description
             ydesc = self.experiments[0].columns[ycol].description
-            plotFile = f"{plotdir}hist{xdesc}_{ydesc}.pdf"
+            plotFile = f"{plotdir}/hist{xdesc}_{ydesc}.pdf"
             mytitle = f"{self.chain} {self.ion}"
             myxlabel = f"entropy {xdesc} vs. {ydesc}"
             myylabel = "frequency"
@@ -178,9 +178,14 @@ class SetOfExperiments:
         xdesc = self.experiments[0].columns[xcol].description
         ydesc = self.experiments[0].columns[ycol].description
 
+        sepx = xdesc.find(" ")
+        sepy = ydesc.find(" ")
+        # check if we start from the same mers pair
+        assert xdesc[sepx+1:] == ydesc[sepy+1:]
+
         mytitle = f"{self.chain}, ion {self.ion}"
-        myylabel = f"entropy  {xdesc} vs. {ydesc}"
-        myxlabel = "number of first mer"
+        myylabel = f"entropy  {xdesc[0:sepx]} vs. {ydesc[0:sepy]}"
+        myxlabel = f"mers x, x+1, starting at {xdesc[sepx+1:]}"
 
         plt.plot(first_mers, median_entropy, "o--", color="red", label="median")
         plt.plot(first_mers, entropy_perc5, ":", color="red", label="5 and 95 perc.")
@@ -199,7 +204,7 @@ class SetOfExperiments:
         """  compute percentiles of the histogram of entropies """
         no_struct = 12
         first_mers = list(range(1, no_mers+1))
-        print("highest first mer", first_mers[-1])
+        print("n.o. mers", first_mers[-1]+1)
         entropies = []
 
         for mer in range(no_mers):
@@ -207,10 +212,14 @@ class SetOfExperiments:
 
         xdesc = self.experiments[0].columns[xcol].description
         ydesc = self.experiments[0].columns[ycol].description
+        sepx = xdesc.find(" ")
+        sepy = ydesc.find(" ")
+        # check if we start from the same mers pair
+        assert xdesc[sepx+1:] == ydesc[sepy+1:]
 
         mytitle = f"{self.chain}, ion {self.ion}"
-        myylabel = f"entropy  {xdesc} vs. {ydesc}"
-        myxlabel = "number of first mer"
+        myylabel = f"entropy  {xdesc[0:sepx]} vs. {ydesc[0:sepy]}"
+        myxlabel = f"mers x, x+1, starting at {xdesc[sepx+1:]}"
 
         for j in range(no_struct):
             color = 5 / 6 * (1 - j / no_struct) * np.array((1, 1, 1))
