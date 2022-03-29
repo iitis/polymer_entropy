@@ -6,6 +6,7 @@ import os
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
+import glob
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 
@@ -27,14 +28,14 @@ class Experiment:
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
         self.columns = [
-            ColumnMeaning("Time", "ps"),
+            ColumnMeaning("Time", "ps"),                            #First column, index 0
             ColumnMeaning("Total energy of the system", "kJ/mol"),
             ColumnMeaning("Total bond energy", "kJ/mol"),
             ColumnMeaning("Total angle energy", "kJ/mol"),
             ColumnMeaning("Total dihedral energy", "kJ/mol"),
             ColumnMeaning("Total planar energy", "kJ/mol"),
             ColumnMeaning("Total Coulomb energy", "kJ/mol"),
-            ColumnMeaning("Total Van der Waals energy", "kJ/mol"),
+            ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
         ]
         if self.chain == 'main chain':
             angles = ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"]
@@ -129,15 +130,16 @@ class SetOfExperiments:
     magic_numbers = {'analysis': 4,
                      'sidechain' : 1}
 
-    def __init__(self, data_path: str, experiment_prefix: str, ion: str, chain: str, no_experiments: int = 12):
+    def __init__(self, data_path: str, experiment_prefix: str, ion: str, chain: str):
         self.partial_path = os.path.join(data_path, f"{experiment_prefix}_")
         self.ion = ion
         assert chain in ['analysis', 'sidechain'], f"Incorrect chain type: {chain}"
         self.chain = chain
-        self.no_experiments = no_experiments
         self.magic_number = self.magic_numbers[self.chain]
-        experiment_file_names = [f"{experiment_prefix}_{i+1}_{chain}_{ion}.tab" for i in range(no_experiments)]
-        self.experiments = [Experiment(os.path.join(data_path, fp)) for fp in experiment_file_names]
+        #experiment_file_names = [f"{experiment_prefix}_{i+1}_{chain}_{ion}.tab" for i in range(no_experiments)]
+        experiment_file_names = glob.glob(f"{data_path}/{experiment_prefix}_*_{chain}_{ion}.tab")
+        self.no_experiments = len(experiment_file_names)
+        self.experiments = [Experiment(fp) for fp in experiment_file_names] #FIXME - is order important?
 
     def hist_of_entropy(self, xcol: int, ycol: int, plotdir: str = None):
         """ compute histogram of entropy over realisations """
@@ -159,7 +161,7 @@ class SetOfExperiments:
             plt.ylabel(myylabel)
 
             plt.savefig(plotFile)
-            plt.clf()
+            plt.close()
         return entropies
 
     def entropy_distribution_percentiles(self, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
@@ -204,7 +206,7 @@ class SetOfExperiments:
 
     def entropy_distribution_realisations(self, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
         """  compute percentiles of the histogram of entropies """
-        no_struct = 12
+        no_struct = self.no_experiments #was 12?
         first_mers = list(range(1, no_mers+1))
         entropies = []
 
