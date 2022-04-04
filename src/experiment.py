@@ -24,9 +24,12 @@ class Experiment:
     A class that represent an experiment of entropy calculation
     from angles from the single file
     """
+
     def __init__(self, filepath: str):
+        self.complex = os.path.basename(filepath).split('_')[0]
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
+        self.no_mers = 23
         self.columns = [
             ColumnMeaning("Time", "ps"),                            #First column, index 0
             ColumnMeaning("Total energy of the system", "kJ/mol"),
@@ -39,13 +42,13 @@ class Experiment:
         ]
         if self.chain == 'main chain':
             angles = ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"]
-            for mer in range(23):
+            for mer in range(self.no_mers):
                 for angle in angles:
                     self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
         elif self.chain == 'side chain':
             angles = ["γ","ω","δ"]
             for angle in angles:
-                for mer in range(23):
+                for mer in range(self.no_mers):
                     self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
 
     def drop_first_observations(self):
@@ -164,8 +167,9 @@ class SetOfExperiments:
             plt.close()
         return entropies
 
-    def entropy_distribution_percentiles(self, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
+    def entropy_distribution_percentiles(self, xcol: int, ycol: int, plotdir: str):
         """  compute percentiles of the histogram of entropies """
+        no_mers = self.experiments[0].no_mers
         first_mers = list(range(1, no_mers+1))
 
         median_entropy = []
@@ -204,9 +208,10 @@ class SetOfExperiments:
 
         return median_entropy
 
-    def entropy_distribution_realisations(self, xcol: int, ycol: int, plotdir: str, no_mers: int = 23):
+    def entropy_distribution_realisations(self, xcol: int, ycol: int, plotdir: str):
         """  compute percentiles of the histogram of entropies """
-        no_struct = self.no_experiments #was 12?
+        no_mers = self.experiments[0].no_mers
+        no_struct = self.no_experiments
         first_mers = list(range(1, no_mers+1))
         entropies = []
 
