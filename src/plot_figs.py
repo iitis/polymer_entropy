@@ -51,6 +51,11 @@ if __name__ == "__main__":
                        ('ω mers 1, 2', 'δ mers 1, 2')]
     }
 
+    angles = {
+        'analysis' : [ ('ϕ₁₄','ψ₁₄'), ('ϕ₁₃','ψ₁₃'), ('ϕ₁₄','ϕ₁₃') ],
+        'sidechain': [ ('γ','ω'), ('γ','δ'), ('ω','δ')]
+    }
+
     numRealisations = 2 
     
     print(f"{args.complex=}")
@@ -71,9 +76,9 @@ if __name__ == "__main__":
         for ion in args.ions:
             mySetOfExperiments = SetOfExperiments(args.datafolder, args.complex, ion, myMode)
 
-            for p in startingPoints[myMode]:
-                angle1 = p[0].split(' ')[0]
-                angle2 = p[1].split(' ')[0]                
+            for angle1,angle2 in angles[myMode]:
                 mySetOfExperiments.entropy_distribution_percentiles(angle1, angle2, args.plotdir)
                 mySetOfExperiments.entropy_distribution_realisations(angle1, angle2, args.plotdir)
+
+            for p in startingPoints[myMode]:
                 mySetOfExperiments.hist_of_entropy(p[0], p[1], args.plotdir)
