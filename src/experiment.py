@@ -24,32 +24,53 @@ class Experiment:
     A class that represent an experiment of entropy calculation
     from angles from the single file
     """
+   
+    angles_config = {
+        ('Albumin+HA','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
+        ('Albumin+HA','side chain'): ["γ","ω","δ"],
+        ('Albumin+CS6','main chain'): ["ψ₁₄","ϕ₁₄","ψ₁₃","ϕ₁₃"],	
+    }
 
     def __init__(self, filepath: str):
         self.complex = os.path.basename(filepath).split('_')[0]
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
-        self.no_mers = 23
-        self.columns = [
-            ColumnMeaning("Time", "ps"),                            #First column, index 0
-            ColumnMeaning("Total energy of the system", "kJ/mol"),
-            ColumnMeaning("Total bond energy", "kJ/mol"),
-            ColumnMeaning("Total angle energy", "kJ/mol"),
-            ColumnMeaning("Total dihedral energy", "kJ/mol"),
-            ColumnMeaning("Total planar energy", "kJ/mol"),
-            ColumnMeaning("Total Coulomb energy", "kJ/mol"),
-            ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
-        ]
-        if self.chain == 'main chain':
-            angles = ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"]
-            for mer in range(self.no_mers):
-                for angle in angles:
-                    self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
-        elif self.chain == 'side chain':
-            angles = ["γ","ω","δ"]
-            for angle in angles:
+        self.angles = self.angles_config[(self.complex,self.chain)]
+
+        if self.complex == 'Albumin+HA':
+            self.no_mers = 23
+            self.columns = [
+                ColumnMeaning("Time", "ps"),                            #First column, index 0
+                ColumnMeaning("Total energy of the system", "kJ/mol"),
+                ColumnMeaning("Total bond energy", "kJ/mol"),
+                ColumnMeaning("Total angle energy", "kJ/mol"),
+                ColumnMeaning("Total dihedral energy", "kJ/mol"),
+                ColumnMeaning("Total planar energy", "kJ/mol"),
+                ColumnMeaning("Total Coulomb energy", "kJ/mol"),
+                ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
+            ]
+            if self.chain == 'main chain':
                 for mer in range(self.no_mers):
-                    self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+                    for angle in self.angles:
+                        self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+            elif self.chain == 'side chain':
+                for angle in self.angles:
+                    for mer in range(self.no_mers):
+                        self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+
+        if self.complex == 'Albumin+CS6':
+            self.no_mers = 23
+            self.columns = [
+                ColumnMeaning("Time", "ps"),                            #First column, index 0
+            ]
+            for i in range(8):
+                self.columns.append( ColumnMeaning("Not significant", "n/a") ) #next 8 are insignificant
+            if self.chain == 'main chain':
+                for mer in range(self.no_mers):
+                    for angle in self.angles:
+                        self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+            elif self.chain == 'side chain':
+                pass #not supported
 
     def get_colnum_by_meaning(self, meaning: str):
         cols = [ x.description for x in self.columns]
@@ -65,7 +86,7 @@ class Experiment:
     def plot_columns(self, ycol: int, plotname: str = None):
         """
         Plots one column vs another (time by default).
-        Stores to pdf file if plot name is provided.
+        Stores to png file if plot name is provided.
         """
         xcol = 0
         xname = self.columns[xcol].description
@@ -82,7 +103,7 @@ class Experiment:
         plt.title(mytitle)
 
         if plotname:
-            plot_filepath = f"{plotname}series_{self.chain.replace(' ','')}_{ycol}.pdf"
+            plot_filepath = f"{plotname}series_{self.chain.replace(' ','')}_{ycol}.png"
             plt.savefig(plot_filepath)
             plt.clf()
         else:
@@ -108,7 +129,7 @@ class Experiment:
         plt.ylabel(self.columns[ycol])
         plt.title(mytitle)
         if plotname:
-            plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{xcol}_{ycol}.pdf"
+            plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{xcol}_{ycol}.png"
             plt.savefig(plot_filepath)
             plt.clf()
         else:
@@ -144,7 +165,7 @@ class SetOfExperiments:
         self.chain = chain
         experiment_file_names = glob.glob(f"{data_path}/{experiment_prefix}_*_{chain}_{ion}.tab")
         self.no_experiments = len(experiment_file_names)
-        self.experiments = [Experiment(fp) for fp in experiment_file_names] #FIXME - is order important?
+        self.experiments = [Experiment(fp) for fp in experiment_file_names] #FIXME - is order important? Yes. It is.
 
     def hist_of_entropy(self, xcolumn: str, ycolumn: str, plotdir: str = None):
         """ compute histogram of entropy over realisations """
@@ -153,12 +174,10 @@ class SetOfExperiments:
         entropies = [experiment.get_entropy(xcol, ycol) for experiment in self.experiments]
 
         if plotdir:
-            xdesc = self.experiments[0].columns[xcol].description
-            ydesc = self.experiments[0].columns[ycol].description
-            plotFile = os.path.join(plotdir,f"hist{xdesc}_{ydesc}.pdf")
+            plotFile = os.path.join(plotdir,f"hist{xcolumn}_{ycolumn}.png")
             mytitle = f"{self.chain} {self.ion}"
             mytitle = mytitle.replace("analysis", "main chain")
-            myxlabel = f"entropy {xdesc} vs. {ydesc}"
+            myxlabel = f"entropy {xcolumn} vs. {ycolumn}"
             myylabel = "frequency"
 
             plt.subplots()
@@ -198,7 +217,7 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plot_filepath = os.path.join(plotdir, f"entropy_{self.chain}_{self.ion}_{angle1}_{angle2}.pdf")
+        plot_filepath = os.path.join(plotdir, f"entropy_{self.chain}_{self.ion}_{angle1}_{angle2}.png")
         plt.savefig(plot_filepath)
         plt.clf()
 
@@ -228,7 +247,7 @@ class SetOfExperiments:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
-        plot_filepath = os.path.join(plotdir, f"entropy_reals_{self.chain}_{self.ion}_{angle1}_{angle2}.pdf")
+        plot_filepath = os.path.join(plotdir, f"entropy_reals_{self.chain}_{self.ion}_{angle1}_{angle2}.png")
         plt.savefig(plot_filepath)
         plt.clf()
 

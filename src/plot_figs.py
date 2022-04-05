@@ -40,13 +40,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    Point = namedtuple('Point', ['x', 'y'])
- 
-    startingPoints = {
-        'analysis' : [Point(8, 9), Point(10, 11), Point(8, 10)],
-        'sidechain' : [Point(8, 31), Point(8, 54), Point(31, 54)]
-    }
-
     startingPoints = {
 
         'analysis' : [ ('ϕ₁₄ mers 1, 2', 'ψ₁₄ mers 1, 2'),
