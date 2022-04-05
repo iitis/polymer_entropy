@@ -7,6 +7,7 @@ If more than one is dropped warning is displayed.
 """
 import argparse
 import os
+import itertools
 
 from collections import namedtuple
 from experiment import Experiment, SetOfExperiments
@@ -51,11 +52,6 @@ if __name__ == "__main__":
                        ('ω mers 1, 2', 'δ mers 1, 2')]
     }
 
-    angles = {
-        'analysis' : [ ('ϕ₁₄','ψ₁₄'), ('ϕ₁₃','ψ₁₃'), ('ϕ₁₄','ϕ₁₃') ],
-        'sidechain': [ ('γ','ω'), ('γ','δ'), ('ω','δ')]
-    }
-
     numRealisations = 2 
     
     print(f"{args.complex=}")
@@ -76,7 +72,10 @@ if __name__ == "__main__":
         for ion in args.ions:
             mySetOfExperiments = SetOfExperiments(args.datafolder, args.complex, ion, myMode)
 
-            for angle1,angle2 in angles[myMode]:
+            angles = mySetOfExperiments.experiments[0].angles
+
+            for angle1,angle2 in itertools.combinations(angles,2):
+                print(f"{angle1=} {angle2=}")
                 mySetOfExperiments.entropy_distribution_percentiles(angle1, angle2, args.plotdir)
                 mySetOfExperiments.entropy_distribution_realisations(angle1, angle2, args.plotdir)
 
