@@ -47,6 +47,17 @@ if __name__ == "__main__":
         'sidechain' : [Point(8, 31), Point(8, 54), Point(31, 54)]
     }
 
+    startingPoints = {
+
+        'analysis' : [ ('ϕ₁₄ mers 1, 2', 'ψ₁₄ mers 1, 2'),
+                       ('ϕ₁₃ mers 1, 2', 'ψ₁₃ mers 1, 2'),
+                       ('ϕ₁₄ mers 1, 2', 'ϕ₁₃ mers 1, 2')],
+
+        'sidechain' : [('γ mers 1, 2', 'ω mers 1, 2'),
+                       ('γ mers 1, 2', 'δ mers 1, 2'),
+                       ('ω mers 1, 2', 'δ mers 1, 2')]
+    }
+
     numRealisations = 2 
     
     print(f"{args.complex=}")
@@ -61,13 +72,15 @@ if __name__ == "__main__":
                 myExperiment = Experiment(file_path)
                 myExperiment.drop_first_observations()
                 myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
-                myExperiment.plot_histogram_2d(startingPoints[myMode][0].x, startingPoints[myMode][0].y, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
+                myExperiment.plot_histogram_2d(startingPoints[myMode][0][0], startingPoints[myMode][0][1], os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
 
     for myMode in args.modes:
         for ion in args.ions:
             mySetOfExperiments = SetOfExperiments(args.datafolder, args.complex, ion, myMode)
 
             for p in startingPoints[myMode]:
-                mySetOfExperiments.entropy_distribution_percentiles(p.x, p.y, args.plotdir)
-                mySetOfExperiments.entropy_distribution_realisations(p.x, p.y, args.plotdir)
-                mySetOfExperiments.hist_of_entropy(p.x, p.y, args.plotdir)
+                angle1 = p[0].split(' ')[0]
+                angle2 = p[1].split(' ')[0]                
+                mySetOfExperiments.entropy_distribution_percentiles(angle1, angle2, args.plotdir)
+                mySetOfExperiments.entropy_distribution_realisations(angle1, angle2, args.plotdir)
+                mySetOfExperiments.hist_of_entropy(p[0], p[1], args.plotdir)
