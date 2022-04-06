@@ -3,10 +3,10 @@ A module holding Experiment class that represent entire dataset
  from a file along with basic operations on it.
 """
 import os
+import glob
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
-import glob
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 
@@ -24,11 +24,11 @@ class Experiment:
     A class that represent an experiment of entropy calculation
     from angles from the single file
     """
-   
+
     angles_config = {
         ('Albumin+HA','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
         ('Albumin+HA','side chain'): ["γ","ω","δ"],
-        ('Albumin+CS6','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],	
+        ('Albumin+CS6','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
     }
 
     def __init__(self, filepath: str):
@@ -63,7 +63,7 @@ class Experiment:
             self.columns = [
                 ColumnMeaning("Time", "ps"),                            #First column, index 0
             ]
-            for i in range(8):
+            for _ in range(8):
                 self.columns.append( ColumnMeaning("Not significant", "n/a") ) #next 8 are insignificant
             if self.chain == 'main chain':
                 for mer in range(self.no_mers):

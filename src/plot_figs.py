@@ -9,7 +9,6 @@ import argparse
 import os
 import itertools
 
-from collections import namedtuple
 from experiment import Experiment, SetOfExperiments
 
 if __name__ == "__main__":
@@ -39,8 +38,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    numRealisations = 2 
-    
+    numRealisations = 2
+
     print(f"{args.complex=}")
     print(f"{args.ions=}")
     print(f"{args.modes=}")
@@ -50,7 +49,7 @@ if __name__ == "__main__":
             for i in range(1,numRealisations+1):
                 file_path = os.path.join(args.datafolder, f"{args.complex}_{i}_{myMode}_{ion}.tab")
 
-                myExperiment = Experiment(file_path)              
+                myExperiment = Experiment(file_path)
                 myExperiment.drop_first_observations()
                 myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
                 angles = myExperiment.angles
