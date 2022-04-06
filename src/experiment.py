@@ -28,7 +28,7 @@ class Experiment:
     angles_config = {
         ('Albumin+HA','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
         ('Albumin+HA','side chain'): ["γ","ω","δ"],
-        ('Albumin+CS6','main chain'): ["ψ₁₄","ϕ₁₄","ψ₁₃","ϕ₁₃"],	
+        ('Albumin+CS6','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],	
     }
 
     def __init__(self, filepath: str):
