@@ -7,11 +7,9 @@ If more than one is dropped warning is displayed.
 """
 import argparse
 import os
+import itertools
 
-from collections import namedtuple
 from experiment import Experiment, SetOfExperiments
-
-plotDirectory = "plots"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -40,15 +38,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    Point = namedtuple('Point', ['x', 'y'])
- 
-    startingPoints = {
-        'analysis' : [Point(8, 9), Point(10, 11), Point(8, 10)],
-        'sidechain' : [Point(8, 31), Point(8, 54), Point(31, 54)]
-    }
+    numRealisations = 2
 
-    numRealisations = 2 
-    
     print(f"{args.complex=}")
     print(f"{args.ions=}")
     print(f"{args.modes=}")
@@ -61,13 +52,16 @@ if __name__ == "__main__":
                 myExperiment = Experiment(file_path)
                 myExperiment.drop_first_observations()
                 myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
-                myExperiment.plot_histogram_2d(startingPoints[myMode][0].x, startingPoints[myMode][0].y, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
+                angles = myExperiment.angles
+                myExperiment.plot_histogram_2d(f"{angles[0]} mers 1, 2", f"{angles[1]} mers 1, 2", os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
 
     for myMode in args.modes:
         for ion in args.ions:
             mySetOfExperiments = SetOfExperiments(args.datafolder, args.complex, ion, myMode)
 
-            for p in startingPoints[myMode]:
-                mySetOfExperiments.entropy_distribution_percentiles(p.x, p.y, args.plotdir)
-                mySetOfExperiments.entropy_distribution_realisations(p.x, p.y, args.plotdir)
-                mySetOfExperiments.hist_of_entropy(p.x, p.y, args.plotdir)
+            angles = mySetOfExperiments.experiments[0].angles
+
+            for angle1,angle2 in itertools.combinations(angles,2):
+                mySetOfExperiments.entropy_distribution_percentiles(angle1, angle2, args.plotdir)
+                mySetOfExperiments.entropy_distribution_realisations(angle1, angle2, args.plotdir)
+                mySetOfExperiments.hist_of_entropy(f"{angle1} mers 1, 2", f"{angle2} mers 1, 2", args.plotdir)
