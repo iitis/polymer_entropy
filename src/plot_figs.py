@@ -35,25 +35,32 @@ if __name__ == "__main__":
     parser.add_argument(
         "--complex", type=str, help="Complex chosen", default="Albumin+HA"
     )
+    parser.add_argument(
+        "--bins", nargs='+', type=int, help="Number of bins to use for 2d histograms", default=[40,100,150]
+    )
+    parser.add_argument(
+        "--realisations", type=int, help="Process this many first realisations", default=6
+    )
 
     args = parser.parse_args()
-
-    numRealisations = 2
 
     print(f"{args.complex=}")
     print(f"{args.ions=}")
     print(f"{args.modes=}")
+    print(f"{args.bins=}")
+    print(f"{args.realisations=}")
 
     for myMode in args.modes:
         for ion in args.ions:
-            for i in range(1,numRealisations+1):
+            for i in range(1,args.realisations+1):
                 file_path = os.path.join(args.datafolder, f"{args.complex}_{i}_{myMode}_{ion}.tab")
 
                 myExperiment = Experiment(file_path)
                 myExperiment.drop_first_observations()
                 myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
                 angles = myExperiment.angles
-                myExperiment.plot_histogram_2d(f"{angles[0]} mers 1, 2", f"{angles[1]} mers 1, 2", os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
+                for bincount in args.bins:
+                    myExperiment.plot_histogram_2d(f"{angles[0]} mers 1, 2", f"{angles[1]} mers 1, 2", os.path.join(args.plotdir, f"realisation{i}_{ion}_"), bincount)
 
     for myMode in args.modes:
         for ion in args.ions:

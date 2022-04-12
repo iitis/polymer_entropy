@@ -25,30 +25,34 @@ class Experiment:
     from angles from the single file
     """
 
+    plot_dpi = 350
+
     angles_config = {
         ('Albumin+HA','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
         ('Albumin+HA','side chain'): ["γ","ω","δ"],
         ('Albumin+CS6','main chain'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
     }
 
+    initial_columns = [
+        ColumnMeaning("Time", "ps"),                            #First column, index 0
+        ColumnMeaning("Total energy of the system", "kJ/mol"),
+        ColumnMeaning("Total bond energy", "kJ/mol"),
+        ColumnMeaning("Total angle energy", "kJ/mol"),
+        ColumnMeaning("Total dihedral energy", "kJ/mol"),
+        ColumnMeaning("Total planar energy", "kJ/mol"),
+        ColumnMeaning("Total Coulomb energy", "kJ/mol"),
+        ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
+    ]
+
     def __init__(self, filepath: str):
         self.complex = os.path.basename(filepath).split('_')[0]
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
         self.angles = self.angles_config[(self.complex,self.chain)]
+        self.no_mers = 23
+        self.columns = self.initial_columns
 
         if self.complex == 'Albumin+HA':
-            self.no_mers = 23
-            self.columns = [
-                ColumnMeaning("Time", "ps"),                            #First column, index 0
-                ColumnMeaning("Total energy of the system", "kJ/mol"),
-                ColumnMeaning("Total bond energy", "kJ/mol"),
-                ColumnMeaning("Total angle energy", "kJ/mol"),
-                ColumnMeaning("Total dihedral energy", "kJ/mol"),
-                ColumnMeaning("Total planar energy", "kJ/mol"),
-                ColumnMeaning("Total Coulomb energy", "kJ/mol"),
-                ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
-            ]
             if self.chain == 'main chain':
                 for mer in range(self.no_mers):
                     for angle in self.angles:
@@ -59,12 +63,6 @@ class Experiment:
                         self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
 
         if self.complex == 'Albumin+CS6':
-            self.no_mers = 23
-            self.columns = [
-                ColumnMeaning("Time", "ps"),                            #First column, index 0
-            ]
-            for _ in range(8):
-                self.columns.append( ColumnMeaning("Not significant", "n/a") ) #next 8 are insignificant
             if self.chain == 'main chain':
                 for mer in range(self.no_mers):
                     for angle in self.angles:
@@ -73,6 +71,9 @@ class Experiment:
                 pass #not supported
 
     def get_colnum_by_meaning(self, meaning: str):
+        """
+        Returns column index when provided with column meaning
+        """
         cols = [ x.description for x in self.columns]
         return cols.index(meaning)
 
@@ -104,12 +105,13 @@ class Experiment:
 
         if plotname:
             plot_filepath = f"{plotname}series_{self.chain.replace(' ','')}_{ycol}.png"
-            plt.savefig(plot_filepath)
+            plt.savefig(plot_filepath, dpi=self.plot_dpi)
             plt.clf()
         else:
             plt.show()
+        plt.close()
 
-    def plot_histogram_2d(self, xcolumn: str, ycolumn: str, plotname: str = None):
+    def plot_histogram_2d(self, xcolumn: str, ycolumn: str, plotname: str = None, numbins = 10):
         """
         Plots one column vs another 2D histogram
         """
@@ -123,17 +125,18 @@ class Experiment:
         x = correct_signs(x)
 
         plt.subplots()
-        plt.hist2d(x, y, bins=10, cmap=plt.cm.Reds)
+        plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], cmap=plt.cm.Reds)
         plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
         plt.xlabel(self.columns[xcol])
         plt.ylabel(self.columns[ycol])
         plt.title(mytitle)
         if plotname:
-            plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{xcol}_{ycol}.png"
-            plt.savefig(plot_filepath)
+            plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{xcol}_{ycol}_b{numbins}.png"
+            plt.savefig(plot_filepath, dpi=self.plot_dpi)
             plt.clf()
         else:
             plt.show()
+        plt.close()
 
     def get_entropy(self, xcol: int, ycol: int):
         """
@@ -166,6 +169,7 @@ class SetOfExperiments:
         experiment_file_names = glob.glob(f"{data_path}/{experiment_prefix}_*_{chain}_{ion}.tab")
         self.no_experiments = len(experiment_file_names)
         self.experiments = [Experiment(fp) for fp in experiment_file_names] #FIXME - is order important? Yes. It is.
+        self.plot_dpi = self.experiments[0].plot_dpi
 
     def hist_of_entropy(self, xcolumn: str, ycolumn: str, plotdir: str = None):
         """ compute histogram of entropy over realisations """
@@ -186,7 +190,7 @@ class SetOfExperiments:
             plt.xlabel(myxlabel)
             plt.ylabel(myylabel)
 
-            plt.savefig(plotFile)
+            plt.savefig(plotFile, dpi=self.plot_dpi)
             plt.close()
         return entropies
 
@@ -218,7 +222,7 @@ class SetOfExperiments:
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
         plot_filepath = os.path.join(plotdir, f"entropy_{self.chain}_{self.ion}_{angle1}_{angle2}.png")
-        plt.savefig(plot_filepath)
+        plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
 
         return median_entropy
@@ -248,7 +252,7 @@ class SetOfExperiments:
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
         plot_filepath = os.path.join(plotdir, f"entropy_reals_{self.chain}_{self.ion}_{angle1}_{angle2}.png")
-        plt.savefig(plot_filepath)
+        plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
 
 def correct_signs(series, thres: float = 0.5):
