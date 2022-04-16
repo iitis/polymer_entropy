@@ -168,7 +168,9 @@ class SetOfExperiments:
         self.chain = chain
         experiment_file_names = glob.glob(f"{data_path}/{experiment_prefix}_*_{chain}_{ion}.tab")
         self.no_experiments = len(experiment_file_names)
-        self.experiments = [Experiment(fp) for fp in experiment_file_names] #FIXME - is order important? Yes. It is.
+        experiment_file_names = [ f"{data_path}/{experiment_prefix}_{number}_{chain}_{ion}.tab" for number in range(1,self.no_experiments+1) ]
+        print(f"DEBUG: {experiment_file_names=}")
+        self.experiments = [Experiment(fp) for fp in experiment_file_names]
         self.plot_dpi = self.experiments[0].plot_dpi
 
     def hist_of_entropy(self, xcolumn: str, ycolumn: str, plotdir: str = None):
