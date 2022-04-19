@@ -46,6 +46,7 @@ class Experiment:
 
     def __init__(self, filepath: str):
         self.complex = os.path.basename(filepath).split('_')[0]
+        self.num_realisation = os.path.basename(filepath).split('_')[1]
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.chain = 'side chain' if 'sidechain' in filepath else 'main chain'
         self.angles = self.angles_config[(self.complex,self.chain)]
@@ -140,7 +141,7 @@ class Experiment:
 
     def plot_angle_histogram(self, angle_x, angle_y, plotname: str = None, numbins = 100):
         """
-        Plots histogram fo angles for all mers in experiment (realisation)
+        Plots histogram fo angles for all subsequent mers in experiment (realisation)
         """
         x_data = np.array([])
         y_data = np.array([])
@@ -166,7 +167,7 @@ class Experiment:
         plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
         plt.xlabel(angle_x)
         plt.ylabel(angle_y)
-        plt.title("All mers angles")
+        plt.title(f"Subsequent mers angles, R{self.num_realisation}")
         if plotname:
             plot_filepath = f"{plotname}hist2D_{self.chain.replace(' ','')}_{angle_x}_{angle_y}_b{numbins}.png"
             plt.savefig(plot_filepath, dpi=self.plot_dpi)
@@ -293,12 +294,15 @@ class SetOfExperiments:
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
 
-def correct_signs(series, thres: float = 0.5):
+def correct_signs(series, relative_thres: float = 0.5, absolute_thres: float = 90.0):
     """ if the sign of the angle is artificially reversed,
     we reverse it back"""
     series_corrected = np.array(series)
 
     for i in range(len(series_corrected) - 1):
-        if np.abs(series_corrected[i] + series_corrected[i + 1]) < thres * np.abs(series_corrected[i + 1]):
+        if np.abs(series_corrected[i] + series_corrected[i + 1]) < relative_thres * np.abs(series_corrected[i + 1]):
+            series_corrected[i + 1:] *= -1
+    for i in range(len(series_corrected) - 1):
+        if np.abs(series_corrected[i] - series_corrected[i + 1]) > absolute_thres:
             series_corrected[i + 1:] *= -1
     return series_corrected
