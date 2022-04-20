@@ -60,7 +60,9 @@ if __name__ == "__main__":
                 myExperiment.plot_columns(8, os.path.join(args.plotdir, f"realisation{i}_{ion}_"))
                 angles = myExperiment.angles
                 for bincount in args.bins:
-                    myExperiment.plot_histogram_2d(f"{angles[0]} mers 1, 2", f"{angles[1]} mers 1, 2", os.path.join(args.plotdir, f"realisation{i}_{ion}_"), bincount)
+                    myExperiment.plot_histogram_2d(f"{angles[2]} mers 1, 2", f"{angles[3]} mers 1, 2", os.path.join(args.plotdir, f"realisation{i}_{ion}_"), bincount)
+                    for angle1,angle2 in itertools.combinations(angles,2):
+                        myExperiment.plot_angle_histogram(angle1, angle2, os.path.join(args.plotdir, f"realisation{i}_{ion}_"), bincount)
 
     for myMode in args.modes:
         for ion in args.ions:
