@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_area_auto_adjustable
 
 class ColumnMeaning:
     """Describes contents of a column"""
@@ -270,12 +272,38 @@ class ExperimentalData:
             plt.close()
         return entropies
 
-    def plot21(self, criteria): #TODO this method name is given after issue number, proper naming needed
-        for myComplex in criteria['complex']:
-            for ion in criteria['ion']:
-                for chain in criteria['chain']:
-                    myCriteria = { 'ion': ion, 'chain': chain, 'complex': complex }
-                    for a1, a2 in [ ("ϕ₁₄","ψ₁₄") , ("ϕ₁₃","ψ₁₃") ]:
-                        myLabel = f"{myComplex} {ion} {chain} {a1}{a2}"
-                        print(f"{myLabel=}")
-                        print(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95]))
+    def plot21(self, criteria, plotdir): #TODO this method name is given after issue number, proper naming needed
+        labels = []
+        data = []
+        assert len(criteria['complex']) == 1
+        for ion in criteria['ion']:
+            for chain in criteria['chain']:
+                myCriteria = { 'ion': ion, 'chain': chain, 'complex': criteria['complex'][0] }
+                for a1, a2 in [ ("ϕ₁₄","ψ₁₄") , ("ϕ₁₃","ψ₁₃") ]:
+                    labels.append(f"{ion} {a1}{a2}")
+                    data.append(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95])) 
+        print(f"{labels=}")
+        print(f"{data=}")
+
+        plot_filepath = os.path.join(plotdir,f"plot21.png")
+
+        fig, ax = plt.subplots(1,1)
+
+        plt.title(f"Plot 21 {criteria['complex'][0]}") #TODO naming
+
+        x = range(len(labels))
+
+        y = [ f[0] for f in data ]
+        ax.plot(x, y, ".", color="red", label="p5")
+        y = [ f[1] for f in data ]
+        ax.plot(x, y, "o", color="red", label="median")
+        y = [ f[2] for f in data ]
+        ax.plot(x, y, ".", color="red", label="p95")
+ 
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation='vertical')
+        make_axes_area_auto_adjustable(ax)
+        plt.legend()
+        plt.savefig(plot_filepath, dpi=self.plot_dpi)
+        plt.close()
+        
