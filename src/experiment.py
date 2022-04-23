@@ -36,6 +36,23 @@ class Experiment:
         ('Albumin+CS6','analysis'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
     }
 
+    bind_energies = { #FIXME this should be handled in a more flexible way
+        ('Albumin+CS6','analysis'): {
+          1: 4.353,
+          2: 4.354,
+          3: 4.348,
+          4: 4.347,
+          5: 4.339,
+          6: 4.322,
+          7: 4.314,
+          8: 4.1875,
+          9: 4.274,
+          10: 4.249,
+          11: 4.236,
+          12: 4.186,
+        }
+    }
+
     initial_columns = [
         ColumnMeaning("Time", "ps"),                            #First column, index 0
         ColumnMeaning("Total energy of the system", "kJ/mol"),
@@ -54,6 +71,7 @@ class Experiment:
         self.angles = self.angles_config[(self.complex,self.chain)]
         self.no_mers = 23
         self.columns = self.initial_columns
+        self.bind_energy = self.bind_energies[(self.complex, self.chain)][int(self.num_realisation)]
 
         if self.complex == 'Albumin+HA':
             if self.chain == 'analysis':
@@ -136,12 +154,14 @@ class Experiment:
             y = self.dataframe.iloc[:, c]
             y_data = np.concatenate((y_data, y))
 
+        n_datapoints = min( len(x_data), len(y_data) )
+
         plt.subplots()
         plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], cmap=plt.cm.Reds)
-        plt.colorbar(format=mtick.FormatStrFormatter("%.1e")) #FIXME scientific scale
+        plt.colorbar(format=mtick.ScalarFormatter())
         plt.xlabel(angle_x)
         plt.ylabel(angle_y)
-        plt.title(f"{self} - Subsequent mers angles")
+        plt.title(f"{self} - Subsequent mers angles, n={n_datapoints}")
         plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
@@ -285,7 +305,7 @@ class ExperimentalData:
         print(f"{labels=}")
         print(f"{data=}")
 
-        plot_filepath = os.path.join(plotdir,f"plot21.png")
+        plot_filepath = os.path.join(plotdir,f"plot21_{criteria['complex'][0]}.png")
 
         fig, ax = plt.subplots(1,1)
 
@@ -302,6 +322,7 @@ class ExperimentalData:
  
         ax.set_xticks(x)
         ax.set_xticklabels(labels, rotation='vertical')
+        ax.set_ylabel("Enthropy")
         make_axes_area_auto_adjustable(ax)
         plt.legend()
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
