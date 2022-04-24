@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_area_auto_adjustable
 
 class ColumnMeaning:
@@ -53,31 +52,34 @@ class Experiment:
         }
     }
 
-    initial_columns = [
-        ColumnMeaning("Time", "ps"),                            #First column, index 0
-        ColumnMeaning("Total energy of the system", "kJ/mol"),
-        ColumnMeaning("Total bond energy", "kJ/mol"),
-        ColumnMeaning("Total angle energy", "kJ/mol"),
-        ColumnMeaning("Total dihedral energy", "kJ/mol"),
-        ColumnMeaning("Total planar energy", "kJ/mol"),
-        ColumnMeaning("Total Coulomb energy", "kJ/mol"),
-        ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
-    ]
 
     def __init__(self, filepath: str):
         split_items = re.split('_|\.',os.path.basename(filepath)) # pylint: disable=W1401
         self.complex, self.num_realisation, self.chain, self.ion, _ = split_items
         self.dataframe = pd.read_csv(filepath, sep=";", skipfooter=2, engine="python")
         self.angles = self.angles_config[(self.complex,self.chain)]
-        self.no_mers = 23
-        self.columns = self.initial_columns
+        self.no_mers = 24
+        self.columns = [
+            ColumnMeaning("Time", "ps"),                            #First column, index 0
+            ColumnMeaning("Total energy of the system", "kJ/mol"),
+            ColumnMeaning("Total bond energy", "kJ/mol"),
+            ColumnMeaning("Total angle energy", "kJ/mol"),
+            ColumnMeaning("Total dihedral energy", "kJ/mol"),
+            ColumnMeaning("Total planar energy", "kJ/mol"),
+            ColumnMeaning("Total Coulomb energy", "kJ/mol"),
+            ColumnMeaning("Total Van der Waals energy", "kJ/mol"),  #Column index 7
+        ]
         self.bind_energy = self.bind_energies[(self.complex, self.chain)][int(self.num_realisation)]
 
         if self.complex == 'Albumin+HA':
             if self.chain == 'analysis':
                 for mer in range(self.no_mers):
                     for angle in self.angles:
-                        self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+                        if angle.endswith('₁₃'):
+                            if mer+2 <= self.no_mers:
+                                self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+                        else:
+                            self.columns.append(ColumnMeaning(f"{angle} mer {mer+1}", "deg"))
             elif self.chain == 'side chain':
                 for angle in self.angles:
                     for mer in range(self.no_mers):
@@ -87,7 +89,11 @@ class Experiment:
             if self.chain == 'analysis':
                 for mer in range(self.no_mers):
                     for angle in self.angles:
-                        self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+                        if angle.endswith('₁₃'):
+                            if mer+2 <= self.no_mers:
+                                self.columns.append(ColumnMeaning(f"{angle} mers {mer+1}, {mer+2}", "deg"))
+                        else:
+                            self.columns.append(ColumnMeaning(f"{angle} mer {mer+1}", "deg"))
             elif self.chain == 'side chain':
                 pass #not supported
 
@@ -139,9 +145,15 @@ class Experiment:
         """
         x_data = np.array([])
         y_data = np.array([])
+        if angle_x.endswith('₁₃'):
+            x_columns_of_interest = [ f"{angle_x} mers {mer+1}, {mer+2}" for mer in range(self.no_mers-1) ]
+        else:
+            x_columns_of_interest = [ f"{angle_x} mer {mer+1}" for mer in range(self.no_mers) ]
 
-        x_columns_of_interest = [ f"{angle_x} mers {mer+1}, {mer+2}" for mer in range(self.no_mers) ]
-        y_columns_of_interest = [ f"{angle_y} mers {mer+1}, {mer+2}" for mer in range(self.no_mers) ]
+        if angle_y.endswith('₁₃'):
+            y_columns_of_interest = [ f"{angle_y} mers {mer+1}, {mer+2}" for mer in range(self.no_mers-1) ]
+        else:
+            y_columns_of_interest = [ f"{angle_y} mer {mer+1}" for mer in range(self.no_mers) ]
 
         x_cols = [ self.get_colnum_by_meaning(x) for x in x_columns_of_interest ]
         y_cols = [ self.get_colnum_by_meaning(x) for x in y_columns_of_interest ]
@@ -180,6 +192,14 @@ class Experiment:
         # use molar gas constant R = 8.314
         return 8.314 * entropy(h_norm)
 
+    def list_columns(self):
+        """
+        This is for debug purposes. Display column index and column meaning for all columns.
+        """
+        print(self)
+        for index, column in enumerate(self.columns):
+            print(f"{index+1}: {column}")
+
 class ExperimentalData:
     """
     Gathers all tab files from a data directory, converts them to experiments and offers some manipulation capabilities on these.
@@ -204,8 +224,12 @@ class ExperimentalData:
         chosen_experiments = self.choose_experiments(criteria)
         no_mers = chosen_experiments[0].no_mers
         entropies = np.array([])
-        for mer in range(no_mers):
-            entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}"))))
+        if angle1.endswith('₁₃') and angle2.endswith('₁₃'):
+            for mer in range(no_mers-1):
+                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}"))))
+        else:
+            for mer in range(no_mers):
+                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}"))))
         return [ np.percentile(entropies, p) for p in percentiles ]
 
     def entropy_distribution_percentiles(self, criteria, angle1: str, angle2: str, plotdir: str):
@@ -213,25 +237,34 @@ class ExperimentalData:
         chosen_experiments = self.choose_experiments(criteria)
         assert len(chosen_experiments)
         no_mers = chosen_experiments[0].no_mers
-        first_mers = list(range(1, no_mers+1))
 
         median_entropy = []
         entropy_perc5 = []
         entropy_perc95 = []
 
-        for mer in range(no_mers):
-            entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}"))
-            median_entropy.append(np.median(entropies))
-            entropy_perc5.append(np.percentile(entropies, 5))
-            entropy_perc95.append(np.percentile(entropies, 95))
+        if angle1.endswith('₁₃') and angle2.endswith('₁₃'):
+            for mer in range(no_mers-1):
+                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}"))
+                median_entropy.append(np.median(entropies))
+                entropy_perc5.append(np.percentile(entropies, 5))
+                entropy_perc95.append(np.percentile(entropies, 95))
+                myxlabel = "mer n, n+1"
+                x_axis_ticks = list(range(1, no_mers))
+        else:
+            for mer in range(no_mers):
+                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}"))
+                median_entropy.append(np.median(entropies))
+                entropy_perc5.append(np.percentile(entropies, 5))
+                entropy_perc95.append(np.percentile(entropies, 95))
+                myxlabel = "mer n"
+                x_axis_ticks = list(range(1, no_mers+1))
 
         mytitle = f"entropy perc {chosen_experiments[0].complex} {chosen_experiments[0].ion} {chosen_experiments[0].chain}"
         myylabel = f"entropy  {angle1} vs. {angle2}"
-        myxlabel = "mers x, x+1"
 
-        plt.plot(first_mers, median_entropy, "o--", color="red", label="median")
-        plt.plot(first_mers, entropy_perc5, ":", color="red", label="5 and 95 perc.")
-        plt.plot(first_mers, entropy_perc95, ":", color="red", label=None)
+        plt.plot(x_axis_ticks, median_entropy, "o--", color="red", label="median")
+        plt.plot(x_axis_ticks, entropy_perc5, ":", color="red", label="5 and 95 perc.")
+        plt.plot(x_axis_ticks, entropy_perc95, ":", color="red", label=None)
         plt.legend()
         plt.title(mytitle)
         plt.xlabel(myxlabel)
@@ -247,19 +280,25 @@ class ExperimentalData:
         chosen_experiments = self.choose_experiments(criteria)
         no_mers = chosen_experiments[0].no_mers
         no_struct = len(chosen_experiments)
-        first_mers = list(range(1, no_mers+1))
         entropies = []
 
-        for mer in range(no_mers):
-            entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}")))
+        if angle1.endswith('₁₃'):
+            first_mers = list(range(1, no_mers))
+            myxlabel = "mers x, x+1"
+            for mer in range(no_mers-1):
+                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}")))
+        else:
+            first_mers = list(range(1, no_mers+1))
+            myxlabel = "mer"
+            for mer in range(no_mers):
+                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}")))
 
         mytitle = f"entropy reals {chosen_experiments[0].complex} {chosen_experiments[0].ion} {chosen_experiments[0].chain}"
         myylabel = f"entropy  {angle1} vs. {angle2}"
-        myxlabel = "mers x, x+1"
 
         for j in range(no_struct):
             color = 5 / 6 * (1 - j / no_struct) * np.array((1, 1, 1))
-            e = [entropies[i][j] for i in range(no_mers)]
+            e = [entropies[i][j] for i in range(len(entropies))]
             plt.plot(first_mers, e, label=f"{j+1}", color=color)
 
         plt.legend()
@@ -301,9 +340,7 @@ class ExperimentalData:
                 myCriteria = { 'ion': ion, 'chain': chain, 'complex': criteria['complex'][0] }
                 for a1, a2 in [ ("ϕ₁₄","ψ₁₄") , ("ϕ₁₃","ψ₁₃") ]:
                     labels.append(f"{ion} {a1}{a2}")
-                    data.append(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95])) 
-        print(f"{labels=}")
-        print(f"{data=}")
+                    data.append(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95]))
 
         plot_filepath = os.path.join(plotdir,f"plot21_{criteria['complex'][0]}.png")
 
@@ -319,7 +356,7 @@ class ExperimentalData:
         ax.plot(x, y, "o", color="red", label="median")
         y = [ f[2] for f in data ]
         ax.plot(x, y, ".", color="red", label="p95")
- 
+
         ax.set_xticks(x)
         ax.set_xticklabels(labels, rotation='vertical')
         ax.set_ylabel("Enthropy")
@@ -327,4 +364,3 @@ class ExperimentalData:
         plt.legend()
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.close()
-        
