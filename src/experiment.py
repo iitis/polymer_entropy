@@ -173,7 +173,7 @@ class Experiment:
         plt.colorbar(format=mtick.ScalarFormatter())
         plt.xlabel(angle_x)
         plt.ylabel(angle_y)
-        plt.title(f"{self} - Subsequent mers angles, n={n_datapoints}")
+        plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
         plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
@@ -331,7 +331,7 @@ class ExperimentalData:
             plt.close()
         return entropies
 
-    def plot21(self, criteria, plotdir): #TODO this method name is given after issue number, proper naming needed
+    def aggregate_plot(self, criteria, plotdir):
         labels = []
         data = []
         assert len(criteria['complex']) == 1
@@ -342,11 +342,11 @@ class ExperimentalData:
                     labels.append(f"{ion} {a1}{a2}")
                     data.append(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95]))
 
-        plot_filepath = os.path.join(plotdir,f"plot21_{criteria['complex'][0]}.png")
+        plot_filepath = os.path.join(plotdir,f"aggplot_{criteria['complex'][0]}.png")
 
         fig, ax = plt.subplots(1,1)
 
-        plt.title(f"Plot 21 {criteria['complex'][0]}") #TODO naming
+        plt.title(f"Aggregate Plot {criteria['complex'][0]}")
 
         x = range(len(labels))
 
@@ -359,7 +359,8 @@ class ExperimentalData:
 
         ax.set_xticks(x)
         ax.set_xticklabels(labels, rotation='vertical')
-        ax.set_ylabel("Enthropy")
+        ax.set_ylabel("Entropy")
+        ax.set_xlabel("Ion")
         make_axes_area_auto_adjustable(ax)
         plt.legend()
         plt.savefig(plot_filepath, dpi=self.plot_dpi)

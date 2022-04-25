@@ -71,4 +71,4 @@ if __name__ == "__main__":
                 myData.hist_of_entropy(criteria, "ϕ₁₄ mer 1", "ψ₁₄ mer 1", args.plotdir)
                 myData.hist_of_entropy(criteria, "ϕ₁₃ mers 1, 2", "ψ₁₃ mers 1, 2", args.plotdir)
 
-    myData.plot21(criteria, args.plotdir)
+    myData.aggregate_plot(criteria, args.plotdir)
