@@ -150,7 +150,9 @@ class Experiment:
         plt.clf()
         plt.close()
 
-    def plot_angle_histogram(self, angle_x, angle_y, plotdir: str = "plots", numbins = 100):
+    def plot_angle_histogram(self, angle_x, angle_y, plotdir = None, numbins = 100):
+        print(angle_x)
+        print(self)
         """
         Plots histogram fo angles for all subsequent mers in experiment (realisation)
         """
@@ -179,16 +181,19 @@ class Experiment:
 
         n_datapoints = min( len(x_data), len(y_data) )
 
-        plt.subplots()
-        plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], norm=mpl.colors.LogNorm(vmin=0.1, vmax=100), cmap=plt.cm.YlOrRd)
-        plt.colorbar(format=mtick.ScalarFormatter())
-        plt.xlabel(angle_x)
-        plt.ylabel(angle_y)
-        plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
-        plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
-        plt.savefig(plot_filepath, dpi=self.plot_dpi)
-        plt.clf()
-        plt.close()
+        if plotdir:
+            plt.subplots()
+            plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], norm=mpl.colors.LogNorm(vmin=0.1, vmax=100), cmap=plt.cm.YlOrRd)
+            plt.colorbar(format=mtick.ScalarFormatter())
+            plt.xlabel(angle_x)
+            plt.ylabel(angle_y)
+            plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
+            plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
+            plt.savefig(plot_filepath, dpi=self.plot_dpi)
+            plt.clf()
+            plt.close()
+        else:
+            return experiment.get_entropy(x_data, y_data)
 
     def get_entropy(self, xcol: int, ycol: int):
         """
