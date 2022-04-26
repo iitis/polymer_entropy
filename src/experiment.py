@@ -37,6 +37,18 @@ class Experiment:
 
     bind_energies = { #FIXME this should be handled in a more flexible way
         ('Albumin+CS6','analysis'): {
+          1: 4.3560,
+          2: 4.3560,
+          3: 4.3560,
+          4: 4.3540,
+          5: 4.3540,
+          6: 4.3540,
+          7: 4.3500,
+          8: 4.3500,
+          9: 4.3500,
+          10: 4.3480,
+        },
+        ('Albumin+HA','analysis'): {
           1: 4.353,
           2: 4.354,
           3: 4.348,
@@ -47,8 +59,6 @@ class Experiment:
           8: 4.1875,
           9: 4.274,
           10: 4.249,
-          11: 4.236,
-          12: 4.186,
         }
     }
 
