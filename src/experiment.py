@@ -150,7 +150,7 @@ class Experiment:
         plt.clf()
         plt.close()
 
-    def plot_angle_histogram(self, angle_x, angle_y, plotdir: str = "plots", numbins = 100):
+    def plot_angle_histogram(self, angle_x, angle_y, numbins, plotdir = None):
         """
         Plots histogram fo angles for all subsequent mers in experiment (realisation)
         """
@@ -179,25 +179,35 @@ class Experiment:
 
         n_datapoints = min( len(x_data), len(y_data) )
 
-        plt.subplots()
-        plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], norm=mpl.colors.LogNorm(vmin=0.1, vmax=100), cmap=plt.cm.YlOrRd)
-        plt.colorbar(format=mtick.ScalarFormatter())
-        plt.xlabel(angle_x)
-        plt.ylabel(angle_y)
-        plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
-        plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
-        plt.savefig(plot_filepath, dpi=self.plot_dpi)
-        plt.clf()
-        plt.close()
+        if plotdir:
+            plt.subplots()
+            plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], norm=mpl.colors.LogNorm(vmin=0.1, vmax=100), cmap=plt.cm.YlOrRd)
+            plt.colorbar(format=mtick.ScalarFormatter())
+            plt.xlabel(angle_x)
+            plt.ylabel(angle_y)
+            plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
+            plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
+            plt.savefig(plot_filepath, dpi=self.plot_dpi)
+            plt.clf()
+            plt.close()
+        else:
+            h = np.histogram2d(x, y, bins=numbins)
+            h_vec = np.concatenate(h[0])
+            h_norm = h_vec / sum(h_vec)
+            # use molar gas constant R = 8.314
+            entr =  8.314 * entropy(h_norm)
+            print(self, angle_x, angle_y)
+            print(entr)
+            return entr
 
-    def get_entropy(self, xcol: int, ycol: int):
+    def get_entropy(self, xcol: int, ycol: int, bincount: int):
         """
         computes entropy from histogram of xcol vs. ycol
         """
         y = self.dataframe.iloc[:, ycol]
         x = self.dataframe.iloc[:, xcol]
 
-        h = np.histogram2d(x, y, bins=10)
+        h = np.histogram2d(x, y, bins=bincount)  # added bincount, we had ugly 10 there
         h_vec = np.concatenate(h[0])
         h_norm = h_vec / sum(h_vec)
         # use molar gas constant R = 8.314
@@ -231,19 +241,19 @@ class ExperimentalData:
     def choose_experiments(self, criteria):
         return [ e for e in self.experiments if all([ getattr(e,k) in criteria[k] for k in criteria.keys()]) ]
 
-    def get_entropy_percentiles(self, criteria, angle1, angle2, percentiles):
+    def get_entropy_percentiles(self, criteria, angle1, angle2, percentiles, bincount):
         chosen_experiments = self.choose_experiments(criteria)
         no_mers = chosen_experiments[0].no_mers
         entropies = np.array([])
         if angle1.endswith('₁₃') and angle2.endswith('₁₃'):
             for mer in range(no_mers-1):
-                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}"))))
+                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}", bincount))))
         else:
             for mer in range(no_mers):
-                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}"))))
+                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}", bincount))))
         return [ np.percentile(entropies, p) for p in percentiles ]
 
-    def entropy_distribution_percentiles(self, criteria, angle1: str, angle2: str, plotdir: str):
+    def entropy_distribution_percentiles(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int):
         """  compute percentiles of the histogram of entropies """
         chosen_experiments = self.choose_experiments(criteria)
         assert len(chosen_experiments)
@@ -255,7 +265,7 @@ class ExperimentalData:
 
         if angle1.endswith('₁₃') and angle2.endswith('₁₃'):
             for mer in range(no_mers-1):
-                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}"))
+                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}", bincount))
                 median_entropy.append(np.median(entropies))
                 entropy_perc5.append(np.percentile(entropies, 5))
                 entropy_perc95.append(np.percentile(entropies, 95))
@@ -263,7 +273,7 @@ class ExperimentalData:
                 x_axis_ticks = list(range(1, no_mers))
         else:
             for mer in range(no_mers):
-                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}"))
+                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}", bincount))
                 median_entropy.append(np.median(entropies))
                 entropy_perc5.append(np.percentile(entropies, 5))
                 entropy_perc95.append(np.percentile(entropies, 95))
@@ -286,7 +296,7 @@ class ExperimentalData:
 
         return median_entropy
 
-    def entropy_distribution_realisations(self, criteria, angle1: str, angle2: str, plotdir: str):
+    def entropy_distribution_realisations(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int = 100):
         """  compute percentiles of the histogram of entropies """
         chosen_experiments = self.choose_experiments(criteria)
         no_mers = chosen_experiments[0].no_mers
@@ -297,12 +307,12 @@ class ExperimentalData:
             first_mers = list(range(1, no_mers))
             myxlabel = "mers x, x+1"
             for mer in range(no_mers-1):
-                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}")))
+                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}", bincount)))
         else:
             first_mers = list(range(1, no_mers+1))
             myxlabel = "mer"
             for mer in range(no_mers):
-                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}")))
+                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}", bincount)))
 
         mytitle = f"entropy reals {chosen_experiments[0].complex} {chosen_experiments[0].ion} {chosen_experiments[0].chain}"
         myylabel = f"entropy  {angle1} vs. {angle2}"
@@ -320,12 +330,12 @@ class ExperimentalData:
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
 
-    def hist_of_entropy(self, criteria, xcolumn: str, ycolumn: str, plotdir: str = None):
+    def hist_of_entropy(self, criteria, xcolumn: str, ycolumn: str, bincount: int, plotdir: str = None):
         """ compute histogram of entropy over realisations """
         chosen_experiments = self.choose_experiments(criteria)
         xcol = chosen_experiments[0].get_colnum_by_meaning(xcolumn)
         ycol = chosen_experiments[0].get_colnum_by_meaning(ycolumn)
-        entropies = [experiment.get_entropy(xcol, ycol) for experiment in chosen_experiments]
+        entropies = [experiment.get_entropy(xcol, ycol, bincount) for experiment in chosen_experiments]
         if plotdir:
             plotFile = os.path.join(plotdir,f"{chosen_experiments[0]}hist{xcol}_{ycol}.png")
             mytitle = f"{chosen_experiments[0]} {xcol} {ycol}"
@@ -342,7 +352,7 @@ class ExperimentalData:
             plt.close()
         return entropies
 
-    def aggregate_plot(self, criteria, plotdir):
+    def aggregate_plot(self, criteria, plotdir, bincoint:int = 100):
         labels = []
         data = []
         assert len(criteria['complex']) == 1
@@ -351,7 +361,7 @@ class ExperimentalData:
                 myCriteria = { 'ion': ion, 'chain': chain, 'complex': criteria['complex'][0] }
                 for a1, a2 in [ ("ϕ₁₄","ψ₁₄") , ("ϕ₁₃","ψ₁₃") ]:
                     labels.append(f"{ion} {a1}{a2}")
-                    data.append(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95]))
+                    data.append(self.get_entropy_percentiles( myCriteria, a1, a2, [5,50,95], bincoint))
 
         plot_filepath = os.path.join(plotdir,f"aggplot_{criteria['complex'][0]}.png")
 
