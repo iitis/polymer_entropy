@@ -169,7 +169,7 @@ class Experiment:
         n_datapoints = min( len(x_data), len(y_data) )
 
         plt.subplots()
-        plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], cmap=plt.cm.Reds)
+        plt.hist2d(x, y, bins=numbins, range=[[-180,180],[-180,180]], norm=mpl.colors.LogNorm(vmin=0.1, vmax=100), cmap=plt.cm.YlOrRd)
         plt.colorbar(format=mtick.ScalarFormatter())
         plt.xlabel(angle_x)
         plt.ylabel(angle_y)
