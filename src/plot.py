@@ -59,16 +59,20 @@ if __name__ == "__main__":
                     myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
                     myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄", args.plotdir, bincount)
                     myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃", args.plotdir, bincount)
+                    # printing for first tests
+                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄")
+                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃")
 
-    for mycomplex in args.complex:
-        for ion in args.ions:
-            for chain in args.chains:
-                myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
-                myData.entropy_distribution_percentiles(myCriteria, "ϕ₁₄","ψ₁₄", args.plotdir)
-                myData.entropy_distribution_percentiles(myCriteria, "ϕ₁₃","ψ₁₃", args.plotdir)
-                myData.entropy_distribution_realisations(myCriteria, "ϕ₁₄","ψ₁₄", args.plotdir)
-                myData.entropy_distribution_realisations(myCriteria, "ϕ₁₃","ψ₁₃", args.plotdir)
-                myData.hist_of_entropy(criteria, "ϕ₁₄ mer 1", "ψ₁₄ mer 1", args.plotdir)
-                myData.hist_of_entropy(criteria, "ϕ₁₃ mers 1, 2", "ψ₁₃ mers 1, 2", args.plotdir)
+    for bincount in args.bins:
+        for mycomplex in args.complex:
+            for ion in args.ions:
+                for chain in args.chains:
+                    myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
+                    myData.entropy_distribution_percentiles(myCriteria, "ϕ₁₄","ψ₁₄", args.plotdir, bincount)
+                    myData.entropy_distribution_percentiles(myCriteria, "ϕ₁₃","ψ₁₃", args.plotdir, bincount)
+                    myData.entropy_distribution_realisations(myCriteria, "ϕ₁₄","ψ₁₄", args.plotdir, bincount)
+                    myData.entropy_distribution_realisations(myCriteria, "ϕ₁₃","ψ₁₃", args.plotdir, bincount)
+                    myData.hist_of_entropy(criteria, "ϕ₁₄ mer 1", "ψ₁₄ mer 1", bincount, args.plotdir)
+                    myData.hist_of_entropy(criteria, "ϕ₁₃ mers 1, 2", "ψ₁₃ mers 1, 2", bincount, args.plotdir)
 
     myData.aggregate_plot(criteria, args.plotdir)
