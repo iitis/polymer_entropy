@@ -9,6 +9,7 @@ import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 from scipy.stats import entropy
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_area_auto_adjustable
 
