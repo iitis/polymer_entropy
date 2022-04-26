@@ -150,7 +150,7 @@ class Experiment:
         plt.clf()
         plt.close()
 
-    def plot_angle_histogram(self, angle_x, angle_y, plotdir = None, numbins = 100):
+    def plot_angle_histogram(self, angle_x, angle_y, numbins, plotdir = None):
         """
         Plots histogram fo angles for all subsequent mers in experiment (realisation)
         """

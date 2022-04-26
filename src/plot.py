@@ -57,11 +57,11 @@ if __name__ == "__main__":
             for chain in args.chains:
                 for mycomplex in args.complex:
                     myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
-                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄", args.plotdir, bincount)
-                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃", args.plotdir, bincount)
+                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount, args.plotdir)
+                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount, args.plotdir)
                     # printing for first tests
-                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄")
-                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃")
+                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount)
+                    myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount)
 
     for bincount in args.bins:
         for mycomplex in args.complex:
