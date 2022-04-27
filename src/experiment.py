@@ -31,7 +31,7 @@ class Experiment:
     plot_dpi = 350
 
     angles_config = {
-        ('Albumin+HA','analysis'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
+        ('Albumin+HA','analysis'): ["ψ₁₄", "ϕ₁₄","ψ₁₃","ϕ₁₃"],
         #('Albumin+HA','side chain'): ["γ","ω","δ"],
         ('Albumin+CS6','analysis'): ["ϕ₁₄","ψ₁₄","ϕ₁₃","ψ₁₃"],
     }
