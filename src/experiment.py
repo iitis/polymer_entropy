@@ -206,7 +206,7 @@ class Experiment:
         plt.clf()
         plt.close()
 
-    def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins, entropy_dict):
+    def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins):
         """
         compute entropy from aggregate histograms
         """
@@ -217,7 +217,7 @@ class Experiment:
         h_norm = h_vec / sum(h_vec)
         # use molar gas constant R = 8.314
         entr =  8.314 * entropy(h_norm)
-        entropy_dict.update({str(self): entr})
+        return entr
 
 
     def get_entropy(self, xcol: int, ycol: int, bincount: int):
@@ -391,15 +391,15 @@ class ExperimentalData:
         plt.close()
 
 
-    def plot_ent_reals(self, entropy_13_13, entropy_14_14, args, plotdir):
+    def plot_ent_reals(self, args, plotdir):
         for ion in args.ions:
             for chain in args.chains:
                 for mycomplex in args.complex:
                     myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
                     chosen_experiments = self.choose_experiments(myCriteria)
                     chosen_experiments.sort(key=lambda x: int(x.num_realisation))
-                    entropies1313 = [ entropy_13_13[str(e)] for e in chosen_experiments ]
-                    entropies1414 = [ entropy_14_14[str(e)] for e in chosen_experiments ]
+                    entropies1313 = [ e.entropy_from_aggregate_histogram("ϕ₁₃","ψ₁₃",100) for e in chosen_experiments ]
+                    entropies1414 = [ e.entropy_from_aggregate_histogram("ϕ₁₄","ψ₁₄",100) for e in chosen_experiments ]
                     bind_energies = [ e.bind_energy for e in chosen_experiments ]
                     reals = [i for i in range(1,len(chosen_experiments)+1)]
 
@@ -423,7 +423,7 @@ class ExperimentalData:
                     plt.close()
 
 
-    def plot_ent_envelopes(self, entropy_13_13, entropy_14_14, args, plotdir):
+    def plot_ent_envelopes(self, args, plotdir):
         e_min = []
         e_median = []
         e_max = []
@@ -435,8 +435,8 @@ class ExperimentalData:
             myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
             chosen_experiments = self.choose_experiments(myCriteria)
             chosen_experiments.sort(key=lambda x: int(x.num_realisation))
-            entropies1313 = [ entropy_13_13[str(e)] for e in chosen_experiments ]
-            entropies1414 = [ entropy_14_14[str(e)] for e in chosen_experiments ]
+            entropies1313 = [ e.entropy_from_aggregate_histogram("ϕ₁₃","ψ₁₃",100) for e in chosen_experiments ]
+            entropies1414 = [ e.entropy_from_aggregate_histogram("ϕ₁₄","ψ₁₄",100) for e in chosen_experiments ]
 
             e_min.append(np.min(entropies1313))
             e_min.append(np.min(entropies1414))
