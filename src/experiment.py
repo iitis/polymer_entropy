@@ -207,7 +207,7 @@ class Experiment:
         plt.clf()
         plt.close()
 
-    def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins):
+    def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins, entropy_dict):
 
         """
         compute entropy from aggregate histograms
@@ -219,9 +219,8 @@ class Experiment:
         h_norm = h_vec / sum(h_vec)
         # use molar gas constant R = 8.314
         entr =  8.314 * entropy(h_norm)
-        print(self, angle_x, angle_y)
-        print(entr)
-        return entr
+        entropy_dict.update({str(self): entr})
+
 
     def get_entropy(self, xcol: int, ycol: int, bincount: int):
         """
@@ -392,3 +391,82 @@ class ExperimentalData:
         plt.legend()
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.close()
+
+
+    def plot_ent_reals(self, entropy_13_13, entropy_14_14, args, plotdir, num_realisation = 10):
+        for ion in args.ions:
+            for chain in args.chains:
+                for mycomplex in args.complex:
+                    entropies1313 = np.zeros(num_realisation)
+                    entropies1414 = np.zeros(num_realisation)
+                    reals = [i+1 for i in range(num_realisation)]
+                    k = 1
+                    for _ in range(num_realisation):
+                        key = str(mycomplex)+"_"+str(k)+"_"+str(chain)+"_"+str(ion)
+                        entropies1313[k-1] = entropy_13_13[key]
+                        entropies1414[k-1] = entropy_14_14[key]
+                        k = k + 1
+
+                    plot_filepath = os.path.join(plotdir,f"reals_"+str(mycomplex)+"_"+str(chain)+"_"+str(ion)+".png")
+
+                    mytitle = str(mycomplex)+"_"+str(chain)+"_"+str(ion)
+                    # I am not abble to call binding energy within the method
+                    plt.plot(reals, entropies1313, "ro", label = "ϕ₁₃ ψ₁₃")
+                    plt.plot(reals, entropies1414, "gd", label = "ϕ₁₄ ψ₁₄")
+
+                    plt.ylabel("Entropy")
+                    plt.xlabel("n.o. realisation")
+                    plt.title(mytitle)
+                    plt.legend()
+                    plt.savefig(plot_filepath, dpi=self.plot_dpi)
+                    plt.close()
+
+
+    def plot_ent_envelopes(self, entropy_13_13, entropy_14_14, args, plotdir, num_realisation = 10):
+        e_min = []
+        e_median = []
+        e_max = []
+
+        labels = []
+
+        for ion in args.ions:
+            chain = args.chains[0]
+            mycomplex = args.complex[0]
+            entropies1313 = np.zeros(num_realisation)
+            entropies1414 = np.zeros(num_realisation)
+            reals = [i+1 for i in range(num_realisation)]
+            k = 1
+            for _ in range(num_realisation):
+                key = str(mycomplex)+"_"+str(k)+"_"+str(chain)+"_"+str(ion)
+                entropies1313[k-1] = entropy_13_13[key]
+                entropies1414[k-1] = entropy_14_14[key]
+                k = k + 1
+
+            e_min.append(np.min(entropies1313))
+            e_min.append(np.min(entropies1414))
+            e_median.append(np.median(entropies1313))
+            e_median.append(np.median(entropies1414))
+            e_max.append(np.max(entropies1313))
+            e_max.append(np.max(entropies1414))
+
+            for a1, a2 in [("ϕ₁₃","ψ₁₃"),  ("ϕ₁₄","ψ₁₄") ]:
+                labels.append(f"{ion} {a1}{a2}")
+
+            plot_filepath = os.path.join(plotdir,f"envelope"+str(chain)+str(mycomplex)+".png")
+
+            _, ax = plt.subplots(1,1)
+
+
+            mytitle = str(mycomplex)
+            x = range(len(labels))
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation='vertical')
+            ax.plot(e_min, "cd", label = "minimal")
+            ax.plot(e_median, "bo", label = "median")
+            ax.plot(e_max,"cd", label = "maximal")
+            ax.set_ylabel("Entropy")
+            plt.title(mytitle)
+            make_axes_area_auto_adjustable(ax)
+            plt.legend()
+            plt.savefig(plot_filepath, dpi=self.plot_dpi)
+            plt.close()

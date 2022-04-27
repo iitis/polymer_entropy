@@ -6,6 +6,8 @@ As first data points are considered artifacts they are dropped.
 If more than one is dropped warning is displayed.
 """
 import argparse
+import numpy as np
+from matplotlib import pyplot as plt
 
 from experiment import ExperimentalData
 
@@ -52,6 +54,9 @@ if __name__ == "__main__":
 
     myData.call_method_by_criteria('plot_column', criteria, 8, args.plotdir)
 
+    entropy_13_13 = {}
+    entropy_14_14 = {}
+
     for bincount in args.bins:
         for ion in args.ions:
             for chain in args.chains:
@@ -60,8 +65,16 @@ if __name__ == "__main__":
                     myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount, args.plotdir)
                     myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount, args.plotdir)
                     # printing for first tests
-                    myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount)
-                    myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount)
+
+                    if bincount == 100:
+
+                        myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount, entropy_14_14)
+                        myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount, entropy_13_13)
+
+
+    myData.plot_ent_reals(entropy_13_13, entropy_14_14, args, args.plotdir, 10)
+    myData.plot_ent_envelopes(entropy_13_13, entropy_14_14, args, args.plotdir, 10)
+
 
     for bincount in args.bins:
         for mycomplex in args.complex:
