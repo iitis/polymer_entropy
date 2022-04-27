@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
 
     myData.plot_ent_reals(entropy_13_13, entropy_14_14, args, args.plotdir, 10)
-    myData.plot_ent_envelopes(entropy_13_13, entropy_14_14, args, args.plotdir, 10)
+    myData.plot_ent_envelopes(entropy_13_13, entropy_14_14, args, args.plotdir)
 
 
     for bincount in args.bins:

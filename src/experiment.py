@@ -399,7 +399,7 @@ class ExperimentalData:
                 for mycomplex in args.complex:
                     entropies1313 = np.zeros(num_realisation)
                     entropies1414 = np.zeros(num_realisation)
-                    reals = [i+1 for i in range(num_realisation)]
+                    reals = [i for i in range(1,num_realisation+1)]
                     k = 1
                     for _ in range(num_realisation):
                         key = str(mycomplex)+"_"+str(k)+"_"+str(chain)+"_"+str(ion)
@@ -422,25 +422,20 @@ class ExperimentalData:
                     plt.close()
 
 
-    def plot_ent_envelopes(self, entropy_13_13, entropy_14_14, args, plotdir, num_realisation = 10):
+    def plot_ent_envelopes(self, entropy_13_13, entropy_14_14, args, plotdir):
         e_min = []
         e_median = []
         e_max = []
-
         labels = []
+        chain = args.chains[0]
+        mycomplex = args.complex[0]
 
         for ion in args.ions:
-            chain = args.chains[0]
-            mycomplex = args.complex[0]
-            entropies1313 = np.zeros(num_realisation)
-            entropies1414 = np.zeros(num_realisation)
-            reals = [i+1 for i in range(num_realisation)]
-            k = 1
-            for _ in range(num_realisation):
-                key = str(mycomplex)+"_"+str(k)+"_"+str(chain)+"_"+str(ion)
-                entropies1313[k-1] = entropy_13_13[key]
-                entropies1414[k-1] = entropy_14_14[key]
-                k = k + 1
+            myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
+            chosen_experiments = self.choose_experiments(myCriteria)
+            chosen_experiments.sort(key=lambda x: int(x.num_realisation))
+            entropies1313 = [ entropy_13_13[str(e)] for e in chosen_experiments ]
+            entropies1414 = [ entropy_14_14[str(e)] for e in chosen_experiments ]
 
             e_min.append(np.min(entropies1313))
             e_min.append(np.min(entropies1414))
@@ -452,21 +447,20 @@ class ExperimentalData:
             for a1, a2 in [("ϕ₁₃","ψ₁₃"),  ("ϕ₁₄","ψ₁₄") ]:
                 labels.append(f"{ion} {a1}{a2}")
 
-            plot_filepath = os.path.join(plotdir,f"envelope"+str(chain)+str(mycomplex)+".png")
+        plot_filepath = os.path.join(plotdir,f"envelope_{chain}_{mycomplex}.png")
 
-            _, ax = plt.subplots(1,1)
+        _, ax = plt.subplots(1,1)
 
-
-            mytitle = str(mycomplex)
-            x = range(len(labels))
-            ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation='vertical')
-            ax.plot(e_min, "cd", label = "minimal")
-            ax.plot(e_median, "bo", label = "median")
-            ax.plot(e_max,"cd", label = "maximal")
-            ax.set_ylabel("Entropy")
-            plt.title(mytitle)
-            make_axes_area_auto_adjustable(ax)
-            plt.legend()
-            plt.savefig(plot_filepath, dpi=self.plot_dpi)
-            plt.close()
+        mytitle = str(mycomplex)
+        x = range(len(labels))
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation='vertical')
+        ax.plot(e_min, "cd", label = "minimal")
+        ax.plot(e_median, "bo", label = "median")
+        ax.plot(e_max,"cd", label = "maximal")
+        ax.set_ylabel("Entropy")
+        plt.title(mytitle)
+        make_axes_area_auto_adjustable(ax)
+        plt.legend()
+        plt.savefig(plot_filepath, dpi=self.plot_dpi)
+        plt.close()
