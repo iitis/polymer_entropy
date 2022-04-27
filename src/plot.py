@@ -64,9 +64,9 @@ if __name__ == "__main__":
                     # printing for first tests
 
 
-
     myData.plot_ent_reals(args, args.plotdir)
     myData.plot_ent_envelopes(args, args.plotdir)
+
 
 
     for bincount in args.bins:
