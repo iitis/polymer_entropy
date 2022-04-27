@@ -193,7 +193,10 @@ class Experiment:
 
         n_datapoints = min( len(x_data), len(y_data) )
 
-        plt.subplots()
+        plt.figure(figsize=(3.8,2.8))
+        plt.subplots_adjust(bottom = 0.17, left = 0.2, top = 0.85)
+
+        #plt.subplots()
         plt.hist2d(x_data, y_data, bins=numbins, range=[[-180, 180], [-180, 180]], density=True, cmap=plt.cm.YlOrRd)
         plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
         plt.xlabel(angle_x)
