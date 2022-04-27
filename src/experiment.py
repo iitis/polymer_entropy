@@ -123,6 +123,18 @@ class Experiment:
         cols = [ x.description for x in self.columns]
         return cols.index(meaning)
 
+    def generate_columns_for_angle(self, angle):
+        """
+        Generates all related columns for anlge, extracts logic so that it is in one place
+        """
+        if angle.endswith('₁₃'):
+            for mer in range(self.no_mers-1):
+                yield f"{angle} mers {mer+1}, {mer+2}"
+        else:
+            for mer in range(self.no_mers):
+                yield f"{angle} mer {mer+1}"
+
+
     def drop_first_observations(self):
         """
         Drops first observations so that only points after stabilisation are
@@ -156,15 +168,8 @@ class Experiment:
         """
         x_data = np.array([])
         y_data = np.array([])
-        if angle_x.endswith('₁₃'):
-            x_columns_of_interest = [ f"{angle_x} mers {mer+1}, {mer+2}" for mer in range(self.no_mers-1) ]
-        else:
-            x_columns_of_interest = [ f"{angle_x} mer {mer+1}" for mer in range(self.no_mers) ]
-
-        if angle_y.endswith('₁₃'):
-            y_columns_of_interest = [ f"{angle_y} mers {mer+1}, {mer+2}" for mer in range(self.no_mers-1) ]
-        else:
-            y_columns_of_interest = [ f"{angle_y} mer {mer+1}" for mer in range(self.no_mers) ]
+        x_columns_of_interest = self.generate_columns_for_angle(angle_x)
+        y_columns_of_interest = self.generate_columns_for_angle(angle_y)
 
         x_cols = [ self.get_colnum_by_meaning(x) for x in x_columns_of_interest ]
         y_cols = [ self.get_colnum_by_meaning(x) for x in y_columns_of_interest ]
@@ -243,42 +248,30 @@ class ExperimentalData:
 
     def get_entropy_percentiles(self, criteria, angle1, angle2, percentiles, bincount):
         chosen_experiments = self.choose_experiments(criteria)
-        no_mers = chosen_experiments[0].no_mers
         entropies = np.array([])
-        if angle1.endswith('₁₃') and angle2.endswith('₁₃'):
-            for mer in range(no_mers-1):
-                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}", bincount))))
-        else:
-            for mer in range(no_mers):
-                entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}", bincount))))
+        columns_of_interest = chosen_experiments[0].generate_columns_for_angle(angle1)
+        for col in columns_of_interest:
+            entropies = np.concatenate((entropies, np.array(self.hist_of_entropy(criteria, col, col.replace(angle1, angle2), bincount))))
         return [ np.percentile(entropies, p) for p in percentiles ]
 
     def entropy_distribution_percentiles(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int):
         """  compute percentiles of the histogram of entropies """
         chosen_experiments = self.choose_experiments(criteria)
         assert len(chosen_experiments)
-        no_mers = chosen_experiments[0].no_mers
 
         median_entropy = []
         entropy_perc5 = []
         entropy_perc95 = []
 
-        if angle1.endswith('₁₃') and angle2.endswith('₁₃'):
-            for mer in range(no_mers-1):
-                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}", bincount))
-                median_entropy.append(np.median(entropies))
-                entropy_perc5.append(np.percentile(entropies, 5))
-                entropy_perc95.append(np.percentile(entropies, 95))
-                myxlabel = "mer n, n+1"
-                x_axis_ticks = list(range(1, no_mers))
-        else:
-            for mer in range(no_mers):
-                entropies = np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}", bincount))
-                median_entropy.append(np.median(entropies))
-                entropy_perc5.append(np.percentile(entropies, 5))
-                entropy_perc95.append(np.percentile(entropies, 95))
-                myxlabel = "mer n"
-                x_axis_ticks = list(range(1, no_mers+1))
+        columns_of_interest = list(chosen_experiments[0].generate_columns_for_angle(angle1))
+        for col in columns_of_interest:
+            entropies = np.array(self.hist_of_entropy(criteria, col, col.replace(angle1,angle2), bincount))
+            median_entropy.append(np.median(entropies))
+            entropy_perc5.append(np.percentile(entropies, 5))
+            entropy_perc95.append(np.percentile(entropies, 95))
+
+        myxlabel = "mer n"
+        x_axis_ticks = list(range(1, len(columns_of_interest)+1))
 
         mytitle = f"entropy perc {chosen_experiments[0].complex} {chosen_experiments[0].ion} {chosen_experiments[0].chain}"
         myylabel = f"entropy  {angle1} vs. {angle2}"
@@ -303,16 +296,11 @@ class ExperimentalData:
         no_struct = len(chosen_experiments)
         entropies = []
 
-        if angle1.endswith('₁₃'):
-            first_mers = list(range(1, no_mers))
-            myxlabel = "mers x, x+1"
-            for mer in range(no_mers-1):
-                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mers {mer+1}, {mer+2}", f"{angle2} mers {mer+1}, {mer+2}", bincount)))
-        else:
-            first_mers = list(range(1, no_mers+1))
-            myxlabel = "mer"
-            for mer in range(no_mers):
-                entropies.append(np.array(self.hist_of_entropy(criteria, f"{angle1} mer {mer+1}", f"{angle2} mer {mer+1}", bincount)))
+        columns_of_interest = list(chosen_experiments[0].generate_columns_for_angle(angle1))
+        first_mers = list(range(1, len(columns_of_interest)+1))
+        myxlabel = "mer"
+        for col in columns_of_interest:
+            entropies.append(np.array(self.hist_of_entropy(criteria, col, col.replace(angle1,angle2), bincount)))
 
         mytitle = f"entropy reals {chosen_experiments[0].complex} {chosen_experiments[0].ion} {chosen_experiments[0].chain}"
         myylabel = f"entropy  {angle1} vs. {angle2}"
@@ -365,7 +353,7 @@ class ExperimentalData:
 
         plot_filepath = os.path.join(plotdir,f"aggplot_{criteria['complex'][0]}.png")
 
-        fig, ax = plt.subplots(1,1)
+        _, ax = plt.subplots(1,1)
 
         plt.title(f"Aggregate Plot {criteria['complex'][0]}")
 
