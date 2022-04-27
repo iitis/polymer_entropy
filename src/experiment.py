@@ -182,7 +182,7 @@ class Experiment:
         if plotdir:
             plt.subplots()
             plt.hist2d(x_data, y_data, bins=numbins, range=[[-180, 180], [-180, 180]], density=True, cmap=plt.cm.YlOrRd)
-            plt.colorbar(format=mtick.ScalarFormatter())
+            plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
             plt.xlabel(angle_x)
             plt.ylabel(angle_y)
             plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
