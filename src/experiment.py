@@ -9,7 +9,6 @@ import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-import matplotlib as mpl
 from scipy.stats import entropy
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_area_auto_adjustable
 
@@ -305,7 +304,6 @@ class ExperimentalData:
     def entropy_distribution_realisations(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int = 100):
         """  compute percentiles of the histogram of entropies """
         chosen_experiments = self.choose_experiments(criteria)
-        no_mers = chosen_experiments[0].no_mers
         no_struct = len(chosen_experiments)
         entropies = []
 
@@ -399,7 +397,7 @@ class ExperimentalData:
                     entropies1313 = [ e.entropy_from_aggregate_histogram("ϕ₁₃","ψ₁₃",100) for e in chosen_experiments ]
                     entropies1414 = [ e.entropy_from_aggregate_histogram("ϕ₁₄","ψ₁₄",100) for e in chosen_experiments ]
                     bind_energies = [ e.bind_energy for e in chosen_experiments ]
-                    reals = [i for i in range(1,len(chosen_experiments)+1)]
+                    reals = list(range(1,len(chosen_experiments)+1))
 
                     plot_filepath = os.path.join(plotdir,f"reals_{mycomplex}_{chain}_{ion}.png")
 

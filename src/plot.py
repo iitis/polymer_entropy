@@ -6,8 +6,6 @@ As first data points are considered artifacts they are dropped.
 If more than one is dropped warning is displayed.
 """
 import argparse
-import numpy as np
-from matplotlib import pyplot as plt
 
 from experiment import ExperimentalData
 
