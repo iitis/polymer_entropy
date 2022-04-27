@@ -188,7 +188,6 @@ class Experiment:
         """
         Plots histogram fo angles for all subsequent mers in experiment (realisation)
         """
-
         x_data, y_data = self.aggregate_angles_over_mers(angle_x, angle_y)
 
         n_datapoints = min( len(x_data), len(y_data) )
@@ -208,7 +207,6 @@ class Experiment:
         plt.close()
 
     def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins, entropy_dict):
-
         """
         compute entropy from aggregate histograms
         """
@@ -393,29 +391,32 @@ class ExperimentalData:
         plt.close()
 
 
-    def plot_ent_reals(self, entropy_13_13, entropy_14_14, args, plotdir, num_realisation = 10):
+    def plot_ent_reals(self, entropy_13_13, entropy_14_14, args, plotdir):
         for ion in args.ions:
             for chain in args.chains:
                 for mycomplex in args.complex:
-                    entropies1313 = np.zeros(num_realisation)
-                    entropies1414 = np.zeros(num_realisation)
-                    reals = [i for i in range(1,num_realisation+1)]
-                    k = 1
-                    for _ in range(num_realisation):
-                        key = str(mycomplex)+"_"+str(k)+"_"+str(chain)+"_"+str(ion)
-                        entropies1313[k-1] = entropy_13_13[key]
-                        entropies1414[k-1] = entropy_14_14[key]
-                        k = k + 1
+                    myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
+                    chosen_experiments = self.choose_experiments(myCriteria)
+                    chosen_experiments.sort(key=lambda x: int(x.num_realisation))
+                    entropies1313 = [ entropy_13_13[str(e)] for e in chosen_experiments ]
+                    entropies1414 = [ entropy_14_14[str(e)] for e in chosen_experiments ]
+                    bind_energies = [ e.bind_energy for e in chosen_experiments ]
+                    reals = [i for i in range(1,len(chosen_experiments)+1)]
 
-                    plot_filepath = os.path.join(plotdir,f"reals_"+str(mycomplex)+"_"+str(chain)+"_"+str(ion)+".png")
+                    plot_filepath = os.path.join(plotdir,f"reals_{mycomplex}_{chain}_{ion}.png")
 
-                    mytitle = str(mycomplex)+"_"+str(chain)+"_"+str(ion)
-                    # I am not abble to call binding energy within the method
-                    plt.plot(reals, entropies1313, "ro", label = "ϕ₁₃ ψ₁₃")
-                    plt.plot(reals, entropies1414, "gd", label = "ϕ₁₄ ψ₁₄")
+                    _, ax = plt.subplots(1,1)
 
-                    plt.ylabel("Entropy")
-                    plt.xlabel("n.o. realisation")
+                    mytitle = f"{mycomplex}_{chain}_{ion}"
+                    ax.plot(reals, entropies1313, "ro", label = "ϕ₁₃ ψ₁₃")
+                    ax.plot(reals, entropies1414, "gd", label = "ϕ₁₄ ψ₁₄")
+                    labels = [ f"{i} (e={j})" for i,j in enumerate(bind_energies,1) ]
+                    ax.set_xticks(reals)
+                    ax.set_xticklabels(labels, rotation='vertical')
+
+                    ax.set_ylabel("Entropy")
+                    ax.set_xlabel("n.o. realisation")
+                    make_axes_area_auto_adjustable(ax)
                     plt.title(mytitle)
                     plt.legend()
                     plt.savefig(plot_filepath, dpi=self.plot_dpi)

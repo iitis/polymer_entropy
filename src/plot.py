@@ -72,7 +72,7 @@ if __name__ == "__main__":
                         myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount, entropy_13_13)
 
 
-    myData.plot_ent_reals(entropy_13_13, entropy_14_14, args, args.plotdir, 10)
+    myData.plot_ent_reals(entropy_13_13, entropy_14_14, args, args.plotdir)
     myData.plot_ent_envelopes(entropy_13_13, entropy_14_14, args, args.plotdir)
 
 
