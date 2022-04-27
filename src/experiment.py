@@ -162,9 +162,9 @@ class Experiment:
         plt.clf()
         plt.close()
 
-    def plot_angle_histogram(self, angle_x, angle_y, numbins, plotdir = None):
+    def aggregate_angles_over_mers(self, angle_x, angle_y):
         """
-        Plots histogram fo angles for all subsequent mers in experiment (realisation)
+        aggregate angles over ubsequent mers
         """
         x_data = np.array([])
         y_data = np.array([])
@@ -182,28 +182,43 @@ class Experiment:
             y = self.dataframe.iloc[:, c]
             y_data = np.concatenate((y_data, y))
 
+        return x_data, y_data
+
+    def plot_angle_histogram(self, angle_x, angle_y, numbins, plotdir):
+        """
+        Plots histogram fo angles for all subsequent mers in experiment (realisation)
+        """
+
+        x_data, y_data = self.aggregate_angles_over_mers(angle_x, angle_y)
+
         n_datapoints = min( len(x_data), len(y_data) )
 
-        if plotdir:
-            plt.subplots()
-            plt.hist2d(x_data, y_data, bins=numbins, range=[[-180, 180], [-180, 180]], density=True, cmap=plt.cm.YlOrRd)
-            plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
-            plt.xlabel(angle_x)
-            plt.ylabel(angle_y)
-            plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
-            plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
-            plt.savefig(plot_filepath, dpi=self.plot_dpi)
-            plt.clf()
-            plt.close()
-        else:
-            h = np.histogram2d(x, y, bins=numbins)
-            h_vec = np.concatenate(h[0])
-            h_norm = h_vec / sum(h_vec)
-            # use molar gas constant R = 8.314
-            entr =  8.314 * entropy(h_norm)
-            print(self, angle_x, angle_y)
-            print(entr)
-            return entr
+        plt.subplots()
+        plt.hist2d(x_data, y_data, bins=numbins, range=[[-180, 180], [-180, 180]], density=True, cmap=plt.cm.YlOrRd)
+        plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
+        plt.xlabel(angle_x)
+        plt.ylabel(angle_y)
+        plt.title(f"{str(self).replace('analysis','')}, n={n_datapoints}")
+        plot_filepath = os.path.join(plotdir,f"{self}_hist2D_{angle_x}_{angle_y}.png")
+        plt.savefig(plot_filepath, dpi=self.plot_dpi)
+        plt.clf()
+        plt.close()
+
+    def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins):
+
+        """
+        compute entropy from aggregate histograms
+        """
+
+        x_data, y_data = self.aggregate_angles_over_mers(angle_x, angle_y)
+        h = np.histogram2d(x_data, y_data, bins=numbins)
+        h_vec = np.concatenate(h[0])
+        h_norm = h_vec / sum(h_vec)
+        # use molar gas constant R = 8.314
+        entr =  8.314 * entropy(h_norm)
+        print(self, angle_x, angle_y)
+        print(entr)
+        return entr
 
     def get_entropy(self, xcol: int, ycol: int, bincount: int):
         """
