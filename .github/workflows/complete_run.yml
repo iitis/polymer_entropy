@@ -21,9 +21,19 @@ jobs:
       run: |
         mkdir pics_HA
         python3 src/plot.py --datafolder data/HA/ --complex 'Albumin+HA' --plotdir pics_HA
-        ls -la pics_HA
+        zip -r HA.zip pics_HA/
     - name: Plotting 'Albumin+CS6'
       run: |
         mkdir pics_CS6
         python3 src/plot.py --datafolder data/CS6/ --complex 'Albumin+CS6' --plotdir pics_CS6
-        ls -la pics_CS6
+        zip -r CS6.zip pics_CS6/
+    - name: Archive HA plots
+      uses: actions/upload-artifact@v3
+      with:
+        name: HA plots
+        path: HA.zip
+    - name: Archive CS6 plots
+      uses: actions/upload-artifact@v3
+      with:
+        name: CS6 plots
+        path: CS6.zip
