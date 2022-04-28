@@ -1,3 +1,5 @@
+[![Pylint](https://github.com/iitis/polymer_entropy/actions/workflows/pylint.yml/badge.svg)](https://github.com/iitis/polymer_entropy/actions/workflows/pylint.yml)
+
 # polymer_entropy
 computation of conformational entropy from polymer simulations
 
