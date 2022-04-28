@@ -60,8 +60,12 @@ if __name__ == "__main__":
                     myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount, args.plotdir)
                     myData.call_method_by_criteria('plot_angle_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount, args.plotdir)
                     # printing for first tests
-                    myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₄","ψ₁₄", bincount)
-                    myData.call_method_by_criteria('entropy_from_aggregate_histogram', myCriteria, "ϕ₁₃","ψ₁₃", bincount)
+
+
+    myData.plot_ent_reals(args, args.plotdir)
+    myData.plot_ent_envelopes(args, args.plotdir)
+
+
 
     for bincount in args.bins:
         for mycomplex in args.complex:

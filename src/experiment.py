@@ -9,7 +9,6 @@ import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-import matplotlib as mpl
 from scipy.stats import entropy
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_area_auto_adjustable
 
@@ -188,12 +187,13 @@ class Experiment:
         """
         Plots histogram fo angles for all subsequent mers in experiment (realisation)
         """
-
         x_data, y_data = self.aggregate_angles_over_mers(angle_x, angle_y)
 
         n_datapoints = min( len(x_data), len(y_data) )
 
-        plt.subplots()
+
+        plt.figure(figsize=(3.8,2.8))
+        plt.subplots_adjust(bottom = 0.17, left = 0.2, top = 0.85)
         plt.hist2d(x_data, y_data, bins=numbins, range=[[-180, 180], [-180, 180]], density=True, cmap=plt.cm.YlOrRd)
         plt.colorbar(format=mtick.FormatStrFormatter("%.1e"))
         plt.xlabel(angle_x)
@@ -205,7 +205,6 @@ class Experiment:
         plt.close()
 
     def entropy_from_aggregate_histogram(self, angle_x, angle_y, numbins):
-
         """
         compute entropy from aggregate histograms
         """
@@ -216,8 +215,6 @@ class Experiment:
         h_norm = h_vec / sum(h_vec)
         # use molar gas constant R = 8.314
         entr =  8.314 * entropy(h_norm)
-        print(self, angle_x, angle_y)
-        print(entr)
         return entr
 
     def get_entropy(self, xcol: int, ycol: int, bincount: int):
@@ -307,7 +304,6 @@ class ExperimentalData:
     def entropy_distribution_realisations(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int = 100):
         """  compute percentiles of the histogram of entropies """
         chosen_experiments = self.choose_experiments(criteria)
-        no_mers = chosen_experiments[0].no_mers
         no_struct = len(chosen_experiments)
         entropies = []
 
@@ -385,6 +381,82 @@ class ExperimentalData:
         ax.set_xticklabels(labels, rotation='vertical')
         ax.set_ylabel("Entropy")
         ax.set_xlabel("Ion")
+        make_axes_area_auto_adjustable(ax)
+        plt.legend()
+        plt.savefig(plot_filepath, dpi=self.plot_dpi)
+        plt.close()
+
+
+    def plot_ent_reals(self, args, plotdir):
+        for ion in args.ions:
+            for chain in args.chains:
+                for mycomplex in args.complex:
+                    myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
+                    chosen_experiments = self.choose_experiments(myCriteria)
+                    chosen_experiments.sort(key=lambda x: int(x.num_realisation))
+                    entropies1313 = [ e.entropy_from_aggregate_histogram("ϕ₁₃","ψ₁₃",100) for e in chosen_experiments ]
+                    entropies1414 = [ e.entropy_from_aggregate_histogram("ϕ₁₄","ψ₁₄",100) for e in chosen_experiments ]
+                    bind_energies = [ e.bind_energy for e in chosen_experiments ]
+                    reals = list(range(1,len(chosen_experiments)+1))
+
+                    plot_filepath = os.path.join(plotdir,f"reals_{mycomplex}_{chain}_{ion}.png")
+
+                    _, ax = plt.subplots(1,1)
+
+                    mytitle = f"{mycomplex}_{chain}_{ion}"
+                    ax.plot(reals, entropies1313, "ro", label = "ϕ₁₃ ψ₁₃")
+                    ax.plot(reals, entropies1414, "gd", label = "ϕ₁₄ ψ₁₄")
+                    labels = [ f"{i} (e={j})" for i,j in enumerate(bind_energies,1) ]
+                    ax.set_xticks(reals)
+                    ax.set_xticklabels(labels, rotation='vertical')
+
+                    ax.set_ylabel("Entropy")
+                    ax.set_xlabel("n.o. realisation")
+                    make_axes_area_auto_adjustable(ax)
+                    plt.title(mytitle)
+                    plt.legend()
+                    plt.savefig(plot_filepath, dpi=self.plot_dpi)
+                    plt.close()
+
+
+    def plot_ent_envelopes(self, args, plotdir):
+        e_min = []
+        e_median = []
+        e_max = []
+        labels = []
+        chain = args.chains[0]
+        mycomplex = args.complex[0]
+
+        for ion in args.ions:
+            myCriteria = { 'ion': ion, 'chain': chain, 'complex': mycomplex }
+            chosen_experiments = self.choose_experiments(myCriteria)
+            chosen_experiments.sort(key=lambda x: int(x.num_realisation))
+            entropies1313 = [ e.entropy_from_aggregate_histogram("ϕ₁₃","ψ₁₃",100) for e in chosen_experiments ]
+            entropies1414 = [ e.entropy_from_aggregate_histogram("ϕ₁₄","ψ₁₄",100) for e in chosen_experiments ]
+
+            e_min.append(np.min(entropies1313))
+            e_min.append(np.min(entropies1414))
+            e_median.append(np.median(entropies1313))
+            e_median.append(np.median(entropies1414))
+            e_max.append(np.max(entropies1313))
+            e_max.append(np.max(entropies1414))
+
+            for a1, a2 in [("ϕ₁₃","ψ₁₃"),  ("ϕ₁₄","ψ₁₄") ]:
+                labels.append(f"{ion} {a1}{a2}")
+
+        plot_filepath = os.path.join(plotdir,f"envelope_{chain}_{mycomplex}.png")
+
+        _, ax = plt.subplots(1,1)
+
+        mytitle = str(mycomplex)
+        x = range(len(labels))
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation='vertical')
+        ax.plot(e_min, "cd", label = "minimal")
+        ax.plot(e_median, "bo", label = "median")
+        ax.plot(e_max,"cd", label = "maximal")
+        ax.set_ylabel("Entropy")
+        plt.title(mytitle)
         make_axes_area_auto_adjustable(ax)
         plt.legend()
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
