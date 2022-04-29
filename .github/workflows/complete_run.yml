@@ -1,0 +1,39 @@
+name: Complete run
+
+on: [push]
+
+jobs:
+  Plotting:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Plotting 'Albumin+HA'
+      run: |
+        mkdir pics_HA
+        python3 src/plot.py --datafolder data/HA/ --complex 'Albumin+HA' --plotdir pics_HA
+        zip -r HA.zip pics_HA/
+    - name: Plotting 'Albumin+CS6'
+      run: |
+        mkdir pics_CS6
+        python3 src/plot.py --datafolder data/CS6/ --complex 'Albumin+CS6' --plotdir pics_CS6
+        zip -r CS6.zip pics_CS6/
+    - name: Archive HA plots
+      uses: actions/upload-artifact@v3
+      with:
+        name: HA plots
+        path: HA.zip
+    - name: Archive CS6 plots
+      uses: actions/upload-artifact@v3
+      with:
+        name: CS6 plots
+        path: CS6.zip
