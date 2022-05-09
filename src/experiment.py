@@ -301,7 +301,7 @@ class ExperimentalData:
 
         return median_entropy
 
-    def entropy_distribution_realisations(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int = 100):
+    def entropy_distribution_realisations(self, criteria, angle1: str, angle2: str, plotdir: str, bincount:int):
         """  compute percentiles of the histogram of entropies """
         chosen_experiments = self.choose_experiments(criteria)
         no_struct = len(chosen_experiments)
@@ -325,6 +325,7 @@ class ExperimentalData:
         plt.title(mytitle)
         plt.xlabel(myxlabel)
         plt.ylabel(myylabel)
+
         plot_filepath = os.path.join(plotdir, f"{mytitle.replace(' ','_')}.png")
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.clf()
@@ -387,7 +388,7 @@ class ExperimentalData:
         plt.close()
 
 
-    def plot_ent_reals(self, args, plotdir):
+    def plot_ent_reals(self, args, plotdir, y_lim):
         for ion in args.ions:
             for chain in args.chains:
                 for mycomplex in args.complex:
@@ -415,11 +416,12 @@ class ExperimentalData:
                     make_axes_area_auto_adjustable(ax)
                     plt.title(mytitle)
                     plt.legend()
+                    plt.ylim(y_lim[0], y_lim[1])
                     plt.savefig(plot_filepath, dpi=self.plot_dpi)
                     plt.close()
 
 
-    def plot_ent_envelopes(self, args, plotdir):
+    def plot_ent_envelopes(self, args, plotdir, y_lim):
         e_min = []
         e_median = []
         e_max = []
@@ -459,5 +461,6 @@ class ExperimentalData:
         plt.title(mytitle)
         make_axes_area_auto_adjustable(ax)
         plt.legend()
+        plt.ylim(y_lim[0], y_lim[1])
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.close()
