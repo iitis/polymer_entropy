@@ -8,6 +8,7 @@ import re
 import matplotlib.ticker as mtick
 import numpy as np
 import pandas as pd
+import scipy as sc
 from matplotlib import pyplot as plt
 from scipy.stats import entropy
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_area_auto_adjustable
@@ -411,7 +412,7 @@ class ExperimentalData:
                     ax.set_xticks(reals)
                     ax.set_xticklabels(labels, rotation='vertical')
 
-                    ax.set_ylabel("Entropy")
+                    ax.set_ylabel("Entropy J/kmol")
                     ax.set_xlabel("n.o. realisation")
                     make_axes_area_auto_adjustable(ax)
                     plt.title(mytitle)
@@ -425,6 +426,7 @@ class ExperimentalData:
         e_min = []
         e_median = []
         e_max = []
+        e_std = []
         labels = []
         chain = args.chains[0]
         mycomplex = args.complex[0]
@@ -438,6 +440,8 @@ class ExperimentalData:
 
             e_min.append(np.min(entropies1313))
             e_min.append(np.min(entropies1414))
+            e_std.append(sc.std(entropies1313))
+            e_std.append(sc.std(entropies1414))
             e_median.append(np.median(entropies1313))
             e_median.append(np.median(entropies1414))
             e_max.append(np.max(entropies1313))
@@ -454,13 +458,15 @@ class ExperimentalData:
         x = range(len(labels))
         ax.set_xticks(x)
         ax.set_xticklabels(labels, rotation='vertical')
-        ax.plot(e_min, "cd", label = "minimal")
-        ax.plot(e_median, "bo", label = "median")
-        ax.plot(e_max,"cd", label = "maximal")
-        ax.set_ylabel("Entropy")
+        ax.plot(e_min, "cd", label = "min, max")
+        #ax.plot(e_median, "bo", label = "median")
+        ax.plot(e_max,"cd")
+        ax.set_ylabel("Entropy J/kmol")
+        ax.errorbar(x, e_median, yerr=e_std, fmt='bo', label = "median ±std")
         plt.title(mytitle)
         make_axes_area_auto_adjustable(ax)
         plt.legend()
         plt.ylim(y_lim[0], y_lim[1])
+        plt.legend(loc='best', ncol=2, fancybox=True, shadow=False)
         plt.savefig(plot_filepath, dpi=self.plot_dpi)
         plt.close()
