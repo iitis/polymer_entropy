@@ -412,7 +412,7 @@ class ExperimentalData:
                     ax.set_xticks(reals)
                     ax.set_xticklabels(labels, rotation='vertical')
 
-                    ax.set_ylabel("Entropy J/kmol")
+                    ax.set_ylabel("Entropy J/Kmol")
                     ax.set_xlabel("n.o. realisation")
                     make_axes_area_auto_adjustable(ax)
                     plt.title(mytitle)
@@ -461,7 +461,7 @@ class ExperimentalData:
         ax.plot(e_min, "cd", label = "min, max")
         #ax.plot(e_median, "bo", label = "median")
         ax.plot(e_max,"cd")
-        ax.set_ylabel("Entropy J/kmol")
+        ax.set_ylabel("Entropy J/Kmol")
         ax.errorbar(x, e_median, yerr=e_std, fmt='bo', label = "median ±std")
         plt.title(mytitle)
         make_axes_area_auto_adjustable(ax)
