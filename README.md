@@ -41,6 +41,6 @@ Linux 5.4.0-90-generic x86_64 x86_64 GNU/Linux
 ## Citing this work
 
 While using this code please cite: P. Sionkowski, P. Bełdowski, N. Kruszewska, P. Weber, B. Marciniak and
-K. Domino, 'Effect of ion and binding site on the conformation of chosen glycosaminoglycans at the albumin surface', submitted to Entropy.
+K. Domino, 'Effect of ion and binding site on the conformation of chosen glycosaminoglycans at the albumin surface',	Entropy 2022, 24, 811.  https://www.mdpi.com/1099-4300/24/6/811/pdf  DOI: 	10.3390/e24060811 
 
 Input data were computed at the Academic Computer Centre in Gdańsk.
